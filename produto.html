@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title id="pageTitle">Produto | REISEN LAB 3D</title>
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/mobile-nav.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body class="has-buy-bar">
+<div class="circuit-bg"></div>
+
+<header class="site-header">
+  <div class="topbar"><span class="topbar-brand">REISEN LAB 3D</span> &nbsp;•&nbsp; IDEIA • PRECISÃO • INOVAÇÃO &nbsp;•&nbsp; IMPRESSÃO 3D SOB MEDIDA &nbsp;•&nbsp; ENVIO PARA TODO O BRASIL</div>
+  <div class="header-main container">
+    <a href="index.html" class="brand">
+      <img src="assets/logo.png" alt="REISEN LAB 3D" class="brand-logo-img">
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html" data-page="index.html">Início</a>
+      <a href="loja.html" data-page="loja.html">Loja</a>
+      <a href="loja.html?cat=servicos" data-page="loja.html">Serviços sob Encomenda</a>
+      <a href="sobre.html" data-page="sobre.html">Sobre</a>
+      <a href="contato.html" data-page="contato.html">Contato</a>
+    </nav>
+    <div class="header-actions">
+      <a href="conta.html" class="icon-btn" data-account-link title="Minha conta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+      <a href="carrinho.html" class="icon-btn" title="Carrinho">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="cart-count" data-cart-count>0</span>
+      </a>
+      <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container" style="padding-top:32px;">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div id="productDetailRoot"></div>
+
+    <section id="relatedSection" style="display:none;">
+      <div class="section-head">
+        <div><span class="eyebrow">Talvez você goste</span><h2>Produtos relacionados</h2></div>
+      </div>
+      <div class="product-grid" id="relatedGrid"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand" style="margin-bottom:14px;">
+          <img src="assets/logo.png" alt="REISEN LAB 3D" class="brand-logo-img brand-logo-img-footer">
+        </a>
+        <p>Ideia, precisão e inovação em cada camada. Impressão 3D de miniaturas, peças, protótipos e produtos personalizados.</p>
+      </div>
+      <div>
+        <h4>Categorias</h4>
+        <ul>
+          <li><a href="loja.html?cat=miniaturas">Miniaturas &amp; RPG</a></li>
+          <li><a href="loja.html?cat=pecas">Peças &amp; Protótipos</a></li>
+          <li><a href="loja.html?cat=filamentos">Filamentos</a></li>
+          <li><a href="loja.html?cat=decoracao">Decoração</a></li>
+          <li><a href="loja.html?cat=chaveiros">Chaveiros</a></li>
+          <li><a href="loja.html?cat=servicos">Serviços sob Encomenda</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Institucional</h4>
+        <ul>
+          <li><a href="sobre.html">Sobre a REISEN LAB 3D</a></li>
+          <li><a href="contato.html">Contato</a></li>
+          <li><a href="conta.html">Minha conta</a></li>
+          <li><a href="carrinho.html">Carrinho</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="#" data-whatsapp="Olá! Vim pelo site da REISEN LAB 3D.">WhatsApp</a></li>
+          <li><a data-contact-email href="#"></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 REISEN LAB 3D. Todos os direitos reservados.</span>
+      <span>Ideia • Precisão • Inovação</span>
+    </div>
+  </div>
+</footer>
+
+<div class="buy-bar-mobile" id="buyBarMobile" style="display:none;">
+  <div>
+    <span class="old" id="buyBarOld"></span>
+    <span class="price" id="buyBarPrice"></span>
+  </div>
+  <button class="btn btn-primary" onclick="addThisToCart()">Adicionar ao carrinho</button>
+</div>
+
+<nav class="mobile-tabbar">
+  <a href="index.html" data-page="index.html" class="tab-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    <span>Início</span>
+  </a>
+  <a href="loja.html" data-page="loja.html" class="tab-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Loja</span>
+  </a>
+  <a href="carrinho.html" data-page="carrinho.html" class="tab-item">
+    <span class="tab-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="tab-badge" data-cart-count>0</span>
+    </span>
+    <span>Carrinho</span>
+  </a>
+  <a href="conta.html" data-page="conta.html" class="tab-item" data-account-link>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Conta</span>
+  </a>
+</nav>
+
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/products.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const id = new URLSearchParams(window.location.search).get('id');
+  const product = reisenGetProductById(id);
+  const root = document.getElementById('productDetailRoot');
+
+  if (!product) {
+    root.innerHTML = '<div class="empty-state"><div class="ico">🔍</div><h3>Produto não encontrado</h3><p>O item que você procura não existe ou foi removido.</p><a href="loja.html" class="btn btn-primary">Voltar para a loja</a></div>';
+  } else {
+    document.title = product.name + ' | REISEN LAB 3D';
+    document.getElementById('breadcrumb').innerHTML = `<a href="index.html">Início</a> / <a href="loja.html">Loja</a> / <a href="loja.html?cat=${product.category}">${(window.REISEN_CATEGORIES.find(c=>c.slug===product.category)||{}).name || product.category}</a> / <span>${product.name}</span>`;
+
+    const oldPriceHtml = product.oldPrice ? `<span class="price-old">${reisenFormatBRL(product.oldPrice)}</span>` : '';
+    const badgeHtml = product.badge ? `<span class="product-badge ${product.oldPrice ? 'sale':''}" style="position:static;display:inline-flex;margin-bottom:14px;">${product.badge}</span>` : '';
+
+    root.innerHTML = `
+      <div class="product-detail">
+        <div class="product-gallery">${product.image ? `<img src="${product.image}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">` : `<span>${product.emoji}</span>`}</div>
+        <div>
+          ${badgeHtml}
+          <h1>${product.name}</h1>
+          <div class="stock-tag">${product.stock > 999 ? 'Sob orçamento' : product.stock + ' em estoque'}</div>
+          <div class="product-price-row" style="margin-bottom:18px;">
+            ${oldPriceHtml}
+            <span class="price-now" style="font-size:1.8rem;">${reisenFormatBRL(product.price)}</span>
+          </div>
+          <p>${product.description}</p>
+          <div class="qty-selector">
+            <div class="qty-control">
+              <button onclick="changeQty(-1)">−</button>
+              <input type="number" id="qtyInput" value="1" min="1">
+              <button onclick="changeQty(1)">+</button>
+            </div>
+          </div>
+          <div class="hero-actions" style="justify-content:flex-start;">
+            <button class="btn btn-primary inline-add-btn" onclick="addThisToCart()">Adicionar ao carrinho</button>
+            <a href="#" class="btn btn-outline" data-whatsapp="Olá! Tenho interesse no produto: ${product.name}">Tirar dúvida no WhatsApp</a>
+          </div>
+        </div>
+      </div>`;
+
+    const related = reisenGetProductsByCategory(product.category).filter(p => p.id !== product.id).slice(0, 4);
+    if (related.length) {
+      document.getElementById('relatedSection').style.display = 'block';
+      document.getElementById('relatedGrid').innerHTML = related.map(reisenProductCardHTML).join('');
+    }
+
+    // Barra fixa de compra (aparece só no mobile via CSS)
+    document.getElementById('buyBarPrice').textContent = reisenFormatBRL(product.price);
+    if (product.oldPrice) document.getElementById('buyBarOld').textContent = reisenFormatBRL(product.oldPrice);
+    document.getElementById('buyBarMobile').style.display = 'flex';
+  }
+
+  function changeQty(delta) {
+    const input = document.getElementById('qtyInput');
+    input.value = Math.max(1, (parseInt(input.value, 10) || 1) + delta);
+  }
+  function addThisToCart() {
+    const qty = parseInt(document.getElementById('qtyInput').value, 10) || 1;
+    reisenAddToCart(product.id, qty);
+    reisenToast('Adicionado ao carrinho');
+  }
+
+  // Reaplica whatsapp após render dinâmico
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.REISEN_CONFIG) {
+      document.querySelectorAll('[data-whatsapp]').forEach((el) => {
+        const msg = encodeURIComponent(el.getAttribute('data-whatsapp'));
+        el.setAttribute('href', `https://wa.me/${window.REISEN_CONFIG.WHATSAPP_NUMBER}?text=${msg}`);
+      });
+    }
+  });
+</script>
+</body>
+</html>

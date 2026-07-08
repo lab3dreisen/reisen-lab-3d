@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>Loja | REISEN LAB 3D</title>
+<meta name="description" content="Catálogo completo REISEN LAB 3D: miniaturas, peças, filamentos, decoração e serviços de impressão 3D sob encomenda.">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/mobile-nav.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="circuit-bg"></div>
+
+<header class="site-header">
+  <div class="topbar"><span class="topbar-brand">REISEN LAB 3D</span> &nbsp;•&nbsp; IDEIA • PRECISÃO • INOVAÇÃO &nbsp;•&nbsp; IMPRESSÃO 3D SOB MEDIDA &nbsp;•&nbsp; ENVIO PARA TODO O BRASIL</div>
+  <div class="header-main container">
+    <a href="index.html" class="brand">
+      <img src="assets/logo.png" alt="REISEN LAB 3D" class="brand-logo-img">
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html" data-page="index.html">Início</a>
+      <a href="loja.html" data-page="loja.html" class="active">Loja</a>
+      <a href="loja.html?cat=servicos" data-page="loja.html">Serviços sob Encomenda</a>
+      <a href="sobre.html" data-page="sobre.html">Sobre</a>
+      <a href="contato.html" data-page="contato.html">Contato</a>
+    </nav>
+    <div class="header-actions">
+      <a href="conta.html" class="icon-btn" data-account-link title="Minha conta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+      <a href="carrinho.html" class="icon-btn" title="Carrinho">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="cart-count" data-cart-count>0</span>
+      </a>
+      <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container page-hero">
+    <span class="eyebrow">Catálogo</span>
+    <h1>Loja REISEN LAB 3D</h1>
+    <p>Miniaturas, peças, protótipos, filamentos e produtos decorativos impressos em 3D.</p>
+  </div>
+
+  <div class="container">
+    <div class="filter-bar" id="filterBar"></div>
+    <div class="product-grid" id="storeGrid"></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand" style="margin-bottom:14px;">
+          <img src="assets/logo.png" alt="REISEN LAB 3D" class="brand-logo-img brand-logo-img-footer">
+        </a>
+        <p>Ideia, precisão e inovação em cada camada. Impressão 3D de miniaturas, peças, protótipos e produtos personalizados.</p>
+      </div>
+      <div>
+        <h4>Categorias</h4>
+        <ul>
+          <li><a href="loja.html?cat=miniaturas">Miniaturas &amp; RPG</a></li>
+          <li><a href="loja.html?cat=pecas">Peças &amp; Protótipos</a></li>
+          <li><a href="loja.html?cat=filamentos">Filamentos</a></li>
+          <li><a href="loja.html?cat=decoracao">Decoração</a></li>
+          <li><a href="loja.html?cat=chaveiros">Chaveiros</a></li>
+          <li><a href="loja.html?cat=servicos">Serviços sob Encomenda</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Institucional</h4>
+        <ul>
+          <li><a href="sobre.html">Sobre a REISEN LAB 3D</a></li>
+          <li><a href="contato.html">Contato</a></li>
+          <li><a href="conta.html">Minha conta</a></li>
+          <li><a href="carrinho.html">Carrinho</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="#" data-whatsapp="Olá! Vim pelo site da REISEN LAB 3D.">WhatsApp</a></li>
+          <li><a data-contact-email href="#"></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 REISEN LAB 3D. Todos os direitos reservados.</span>
+      <span>Ideia • Precisão • Inovação</span>
+    </div>
+  </div>
+</footer>
+
+<nav class="mobile-tabbar">
+  <a href="index.html" data-page="index.html" class="tab-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    <span>Início</span>
+  </a>
+  <a href="loja.html" data-page="loja.html" class="tab-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Loja</span>
+  </a>
+  <a href="carrinho.html" data-page="carrinho.html" class="tab-item">
+    <span class="tab-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="tab-badge" data-cart-count>0</span>
+    </span>
+    <span>Carrinho</span>
+  </a>
+  <a href="conta.html" data-page="conta.html" class="tab-item" data-account-link>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Conta</span>
+  </a>
+</nav>
+
+<script src="js/config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/products.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script>
+  function getQueryParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+  }
+
+  function renderStore(activeCat) {
+    activeCat = activeCat || 'todos';
+    const chips = [{ slug: 'todos', name: 'Todos', icon: '✨' }, ...window.REISEN_CATEGORIES];
+    document.getElementById('filterBar').innerHTML = chips.map(c => `
+      <a href="loja.html?cat=${c.slug}" class="filter-chip ${c.slug === activeCat ? 'active' : ''}">${c.icon} ${c.name}</a>
+    `).join('');
+
+    const products = reisenGetProductsByCategory(activeCat === 'todos' ? null : activeCat);
+    const grid = document.getElementById('storeGrid');
+    grid.innerHTML = products.length
+      ? products.map(reisenProductCardHTML).join('')
+      : '<p class="form-note">Nenhum produto encontrado nessa categoria.</p>';
+  }
+
+  renderStore(getQueryParam('cat'));
+</script>
+</body>
+</html>
