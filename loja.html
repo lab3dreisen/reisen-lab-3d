@@ -145,7 +145,10 @@
       : '<p class="form-note">Nenhum produto encontrado nessa categoria.</p>';
   }
 
-  renderStore(getQueryParam('cat'));
+  (async function initLojaPage() {
+    await reisenLoadCatalog();
+    renderStore(getQueryParam('cat'));
+  })();
 </script>
 </body>
 </html>
