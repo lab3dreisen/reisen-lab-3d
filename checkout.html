@@ -141,7 +141,10 @@
 <script src="js/main.js"></script>
 <script src="js/checkout.js"></script>
 <script>
-  reisenRenderCheckoutSummary();
+  (async function initCheckoutPage() {
+    await reisenLoadCatalog();
+    reisenRenderCheckoutSummary();
+  })();
 
   document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
     e.preventDefault();
