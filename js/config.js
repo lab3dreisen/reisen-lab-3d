@@ -11,8 +11,8 @@
  * ---------------------------------------------------------------
  */
 window.REISEN_CONFIG = {
-  SUPABASE_URL: "https://SEU-PROJETO.supabase.co",
-  SUPABASE_ANON_KEY: "SUA-ANON-KEY-AQUI",
+  SUPABASE_URL: "https://pczlynudrtjdnypufowi.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjemx5bnVkcnRqZG55cHVmb3dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MjExNTQsImV4cCI6MjA5OTE5NzE1NH0.o9LxXBGIobVfubDaDI_ZD0E7nSOD04X20GizZ8qgPxI",
 
   // Dados de contato usados no site (WhatsApp, e-mail etc.)
   WHATSAPP_NUMBER: "5561981454998", // +55 61 98145-4998
