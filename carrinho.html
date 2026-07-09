@@ -125,7 +125,10 @@
         <a href="#" class="remove-link" onclick="reisenRemoveFromCart('${i.id}'); renderCart(); return false;">Remover</a>
       </div>`).join('');
   }
-  renderCart();
+  (async function initCarrinhoPage() {
+    await reisenLoadCatalog();
+    renderCart();
+  })();
 </script>
 </body>
 </html>
