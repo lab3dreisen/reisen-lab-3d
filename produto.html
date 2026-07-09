@@ -136,8 +136,12 @@
 <script src="js/main.js"></script>
 <script>
   const id = new URLSearchParams(window.location.search).get('id');
-  const product = reisenGetProductById(id);
+  let product;
   const root = document.getElementById('productDetailRoot');
+
+  (async function initProdutoPage() {
+  await reisenLoadCatalog();
+  product = reisenGetProductById(id);
 
   if (!product) {
     root.innerHTML = '<div class="empty-state"><div class="ico">🔍</div><h3>Produto não encontrado</h3><p>O item que você procura não existe ou foi removido.</p><a href="loja.html" class="btn btn-primary">Voltar para a loja</a></div>';
@@ -185,6 +189,7 @@
     if (product.oldPrice) document.getElementById('buyBarOld').textContent = reisenFormatBRL(product.oldPrice);
     document.getElementById('buyBarMobile').style.display = 'flex';
   }
+  })();
 
   function changeQty(delta) {
     const input = document.getElementById('qtyInput');
