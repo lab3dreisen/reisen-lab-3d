@@ -259,13 +259,44 @@ function reisenToast(message) {
 }
 
 /**
- * Para migrar para dados reais do Supabase no futuro, troque as funções
- * acima por algo como:
- *
- * async function reisenGetProductsByCategory(categorySlug) {
- *   let query = window.reisenSupabase.from('products').select('*').eq('active', true);
- *   if (categorySlug && categorySlug !== 'todos') query = query.eq('category', categorySlug);
- *   const { data, error } = await query;
- *   return data || [];
- * }
+ * Converte uma linha da tabela "products" do Supabase (snake_case) para o
+ * mesmo formato usado pelo array local REISEN_PRODUCTS (camelCase).
  */
+function reisenMapDbProduct(row) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    category: row.category,
+    price: Number(row.price),
+    oldPrice: row.old_price !== null && row.old_price !== undefined ? Number(row.old_price) : null,
+    emoji: row.emoji || "📦",
+    image: row.image_url || null,
+    badge: row.badge || null,
+    stock: row.stock,
+    short: row.description,
+    description: row.description,
+  };
+}
+
+/**
+ * Busca o catálogo real no Supabase (tabela "products") e substitui o array
+ * local REISEN_PRODUCTS por ele. Em modo demonstração (sem Supabase
+ * configurado) não faz nada — o site continua usando os produtos placeholder
+ * definidos acima. Chame e aguarde essa função no início de cada página que
+ * lista produtos, antes de usar REISEN_PRODUCTS.
+ */
+async function reisenLoadCatalog() {
+  if (window.REISEN_DEMO_MODE || !window.reisenSupabase) return;
+  try {
+    const { data, error } = await window.reisenSupabase
+      .from("products")
+      .select("*")
+      .eq("active", true)
+      .order("created_at", { ascending: false });
+    if (error || !data) return;
+    window.REISEN_PRODUCTS = data.map(reisenMapDbProduct);
+  } catch (e) {
+    console.error("[REISEN LAB 3D] Falha ao carregar catálogo do Supabase:", e);
+  }
+}
