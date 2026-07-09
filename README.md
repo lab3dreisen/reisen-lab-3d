@@ -26,13 +26,15 @@ checkout.html             Formulário de pedido
 pedido-confirmado.html    Confirmação pós-pedido
 login.html / cadastro.html  Autenticação de clientes
 conta.html                Área do cliente + histórico de pedidos
+admin.html                Painel administrativo (produtos + pedidos) — só para admins
 sobre.html / contato.html  Páginas institucionais
 css/style.css              Design system (cores, tipografia, componentes)
 js/config.js                Chaves do Supabase e dados de contato (EDITAR AQUI)
-js/products.js               Catálogo placeholder + helpers de card/preço
+js/products.js               Catálogo placeholder + carregamento do catálogo real do Supabase
+js/admin.js                  Lógica do painel administrativo
 js/cart.js, auth.js, checkout.js, account.js, main.js   Lógica do site
 assets/logo.svg              Ícone recriado a partir da identidade visual
-supabase/schema.sql           Script para criar as tabelas no Supabase
+supabase/schema.sql           Script para criar as tabelas no Supabase (produtos, pedidos, admins)
 supabase/edge-functions/create-infinitepay-link/index.ts   Esqueleto p/ InfinitePay (próximo passo)
 ```
 
@@ -72,11 +74,36 @@ dá pra revisar o site inteiro antes de ligar o backend.
    daí o site sai do "modo demonstração": cadastro e login passam a criar
    usuários reais, e os pedidos do checkout são gravados na tabela `orders`.
 
-Depois disso, quer trocar os produtos placeholder pelos reais? Duas opções:
-- Mais simples: edite o array em `js/products.js`.
-- Mais robusto: edite/insira linhas na tabela `products` do Supabase e adapte
-  as funções no fim de `js/products.js` (já tem um exemplo comentado) para
-  buscar de lá em vez do array local.
+Depois disso, os produtos reais são gerenciados direto pelo **painel
+administrativo** (`admin.html`) — ver seção abaixo. O site busca o catálogo
+da tabela `products` do Supabase automaticamente assim que ele estiver
+configurado (fora do modo demonstração); antes disso, continua mostrando os
+produtos placeholder de `js/products.js`.
+
+## Painel administrativo (admin.html)
+
+Depois que o Supabase estiver configurado (passo anterior), qualquer pessoa
+pode se cadastrar pelo site normalmente, mas só quem for marcado como
+**admin** consegue entrar em `admin.html`. Por lá dá para:
+
+- Cadastrar, editar, ativar/desativar e excluir produtos (nome, categoria,
+  preço, preço promocional, estoque, foto, descrição).
+- Ver todos os pedidos, filtrar por status e atualizar o status de cada um
+  (aguardando pagamento → pago → enviado → entregue, ou cancelado).
+
+Para tornar uma conta admin:
+
+1. Crie a conta normalmente pelo site em `cadastro.html`.
+2. No Supabase, vá em **SQL Editor > New query** e rode (trocando pelo seu e-mail):
+   ```sql
+   update public.profiles set is_admin = true
+   where id = (select id from auth.users where email = 'seu-email@exemplo.com');
+   ```
+3. Faça login de novo (ou atualize a página) e acesse `admin.html` — o link
+   não aparece no menu do site de propósito (só quem tem o endereço acessa),
+   então guarde essa URL: `https://SEU-USUARIO.github.io/reisen-lab-3d/admin.html`.
+
+Repita o passo 2 para cada pessoa que precisar de acesso de editor.
 
 ## Pagamento: onde está a InfinitePay hoje
 
@@ -125,7 +152,8 @@ novo com o mesmo nome — não precisa mexer no HTML/CSS.
 
 - [ ] Rodar `supabase/schema.sql` no projeto Supabase
 - [ ] Preencher `js/config.js` com URL/anon key reais
-- [ ] Trocar produtos placeholder pelos produtos reais
+- [ ] Criar sua conta pelo site e marcar como admin (ver seção do painel administrativo)
+- [ ] Cadastrar os produtos reais pelo `admin.html`
 - [ ] Trocar `assets/logo.svg` pela arte final da marca
 - [ ] Testar cadastro, login, carrinho e checkout com o Supabase já configurado
 - [ ] Publicar no GitHub Pages e testar o link público
