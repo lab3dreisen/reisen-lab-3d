@@ -6,26 +6,26 @@
 <title>Painel administrativo | REISEN LAB 3D</title>
 <link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/premium.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/mobile-nav.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
-<body>
-<div class="circuit-bg"></div>
+<body class="rp">
 
-<header class="site-header">
-  <div class="topbar"><span class="topbar-brand">REISEN LAB 3D</span> &nbsp;•&nbsp; PAINEL ADMINISTRATIVO</div>
-  <div class="header-main container">
-    <a href="index.html" class="brand">
-      <img src="assets/logo.png" alt="REISEN LAB 3D" class="brand-logo-img">
+<header class="rp-header">
+  <div class="rp-container rp-header-inner">
+    <a href="index.html" class="rp-brand">
+      <img src="assets/logo.png" alt="REISEN LAB 3D">
+      <span class="word">REISEN<small>PAINEL ADMIN</small></span>
     </a>
-    <nav class="main-nav" id="mainNav">
+    <nav class="rp-nav main-nav" id="mainNav">
       <a href="index.html" data-page="index.html">Ver site</a>
     </nav>
-    <div class="header-actions">
-      <button class="btn btn-ghost btn-sm" onclick="reisenHandleLogout()">Sair</button>
-      <button class="menu-toggle" id="menuToggle">☰</button>
+    <div class="rp-header-actions">
+      <a href="#" class="rp-btn rp-btn-outline-dark rp-btn-sm" onclick="reisenHandleLogout()">Sair</a>
+      <button class="rp-menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
     </div>
   </div>
 </header>
@@ -148,6 +148,15 @@
     </div>
   </div>
 </main>
+
+<footer class="rp-footer">
+  <div class="rp-container">
+    <div class="rp-footer-bottom" style="border-top:none; padding-top:0;">
+      <span>© 2026 REISEN LAB 3D. Todos os direitos reservados.</span>
+      <span>Ideia • Precisão • Inovação</span>
+    </div>
+  </div>
+</footer>
 
 <script src="js/config.js"></script>
 <script src="js/supabase-client.js"></script>
