@@ -88,8 +88,17 @@ pode se cadastrar pelo site normalmente, mas só quem for marcado como
 
 - Cadastrar, editar, ativar/desativar e excluir produtos (nome, categoria,
   preço, preço promocional, estoque, foto, descrição).
+- Enviar a foto do produto arrastando o arquivo direto para o painel (ou
+  clicando para escolher) — não precisa acesso à pasta do projeto nem ao
+  GitHub. A foto é enviada para o Supabase Storage (bucket `produtos`) e a
+  URL pública é salva automaticamente no produto.
 - Ver todos os pedidos, filtrar por status e atualizar o status de cada um
   (aguardando pagamento → pago → enviado → entregue, ou cancelado).
+
+Se o Supabase já foi configurado antes desse recurso existir, rode uma vez
+no **SQL Editor** o bloco `STORAGE` de `supabase/schema.sql` (cria o bucket
+`produtos` e as permissões de upload) — rodar o arquivo inteiro de novo dá
+erro porque as outras políticas já existem.
 
 Para tornar uma conta admin:
 
