@@ -79,7 +79,22 @@
               <div class="field"><label>Estoque</label><input type="number" min="0" name="stock" required></div>
               <div class="field"><label>Selo (opcional: Novo, Promoção...)</label><input type="text" name="badge"></div>
             </div>
-            <div class="field"><label>URL da imagem (opcional)</label><input type="text" name="image_url" placeholder="assets/produtos/.../foto.jpg"></div>
+            <div class="field">
+              <label>Foto do produto</label>
+              <div class="image-drop-zone" id="imageDropZone">
+                <img id="imagePreview" class="image-drop-preview hidden" alt="Prévia da foto">
+                <div id="imageDropLabel">
+                  <span class="ico">📷</span>
+                  <span>Arraste uma foto aqui ou clique para escolher</span>
+                </div>
+                <input type="file" id="productImageInput" accept="image/*" style="display:none;">
+              </div>
+              <div class="flex gap-8" style="margin-top:8px; align-items:center;">
+                <span id="imageUploadStatus" class="form-note mb-0 hidden"></span>
+                <button type="button" class="btn btn-ghost btn-sm hidden" id="removeImageBtn" onclick="reisenRemoveProductImage()">Remover foto</button>
+              </div>
+              <input type="hidden" name="image_url" id="productImageUrl">
+            </div>
             <div class="field"><label>Descrição</label><textarea name="description" rows="3"></textarea></div>
             <div class="field">
               <label><input type="checkbox" name="active" style="width:auto;display:inline-block;margin-right:8px;"> Produto ativo (visível na loja)</label>
