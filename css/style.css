@@ -495,6 +495,54 @@ section{ padding: 64px 0; }
 }
 .field-row{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
 @media (max-width:600px){ .field-row{ grid-template-columns:1fr; } }
+
+/* Painel admin */
+.status-select{
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: .8rem;
+  margin-top: 6px;
+  text-transform: capitalize;
+}
+#adminProductsBody td, #adminProductsBody th{ vertical-align: middle; }
+
+/* Upload de foto por arrastar-e-soltar (painel admin) */
+.image-drop-zone{
+  border: 2px dashed var(--border-bright);
+  border-radius: var(--radius);
+  padding: 22px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg-alt);
+  transition: all .15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.image-drop-zone:hover, .image-drop-zone.drag-over{
+  border-color: var(--cyan-dim);
+  background: rgba(34,225,255,.05);
+}
+.image-drop-zone #imageDropLabel{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: .85rem;
+  color: var(--text-mute);
+}
+.image-drop-zone #imageDropLabel .ico{ font-size: 1.8rem; }
+.image-drop-preview{
+  max-width: 160px;
+  max-height: 160px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
 .form-note{ font-size:.8rem; color: var(--text-mute); margin-top:-8px; }
 .form-error{
   background: rgba(255,77,109,.08); border:1px solid #8a2a3c; color:#ff8fa3;
