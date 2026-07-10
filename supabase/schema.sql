@@ -13,6 +13,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
   phone text,
+  is_admin boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -29,6 +30,15 @@ create policy "Usuário edita o próprio perfil"
 create policy "Usuário cria o próprio perfil"
   on public.profiles for insert
   with check (auth.uid() = id);
+
+-- Função auxiliar: verifica se o usuário logado é admin (usada nas políticas abaixo)
+create or replace function public.is_admin()
+returns boolean as $$
+  select coalesce(
+    (select is_admin from public.profiles where id = auth.uid()),
+    false
+  );
+$$ language sql security definer stable;
 
 -- Cria o perfil automaticamente quando um usuário se cadastra
 create or replace function public.handle_new_user()
@@ -58,6 +68,7 @@ create table if not exists public.products (
   old_price numeric(10,2),
   image_url text,
   emoji text,
+  badge text,
   stock integer not null default 0,
   active boolean not null default true,
   created_at timestamptz not null default now()
@@ -68,6 +79,22 @@ alter table public.products enable row level security;
 create policy "Qualquer pessoa vê produtos ativos"
   on public.products for select
   using (active = true);
+
+create policy "Admin vê todos os produtos (inclusive inativos)"
+  on public.products for select
+  using (public.is_admin());
+
+create policy "Admin cria produtos"
+  on public.products for insert
+  with check (public.is_admin());
+
+create policy "Admin edita produtos"
+  on public.products for update
+  using (public.is_admin());
+
+create policy "Admin remove produtos"
+  on public.products for delete
+  using (public.is_admin());
 
 -- Seed opcional com os mesmos produtos placeholder do site (edite/apague à vontade)
 insert into public.products (slug, name, description, category, price, old_price, emoji, stock, active)
@@ -82,6 +109,35 @@ values
   ('luminaria-led-voronoi', 'Luminária LED Voronoi', 'Peça decorativa com padrão Voronoi e fita LED USB inclusa.', 'decoracao', 129.90, null, '💡', 15, true),
   ('vaso-geometrico-decorativo', 'Vaso Geométrico Decorativo', 'Vaso com geometria facetada, acabamento fosco.', 'decoracao', 69.90, null, '🏺', 22, true)
 on conflict (slug) do nothing;
+
+-- ----------------------------------------------------------------------------
+-- STORAGE: bucket para as fotos de produtos enviadas pelo painel admin
+-- (upload por arrastar-e-soltar em admin.html, sem precisar mexer em arquivos)
+-- ----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('produtos', 'produtos', true)
+on conflict (id) do nothing;
+
+create policy "Qualquer um vê imagens de produtos"
+  on storage.objects for select
+  to public
+  using (bucket_id = 'produtos');
+
+create policy "Admin envia imagens de produtos"
+  on storage.objects for insert
+  to authenticated
+  with check (bucket_id = 'produtos' and public.is_admin());
+
+create policy "Admin atualiza imagens de produtos"
+  on storage.objects for update
+  to authenticated
+  using (bucket_id = 'produtos' and public.is_admin())
+  with check (bucket_id = 'produtos' and public.is_admin());
+
+create policy "Admin remove imagens de produtos"
+  on storage.objects for delete
+  to authenticated
+  using (bucket_id = 'produtos' and public.is_admin());
 
 -- ----------------------------------------------------------------------------
 -- ORDERS: pedidos feitos pelos clientes
@@ -112,6 +168,14 @@ create policy "Cliente cria pedido para si mesmo (ou convidado)"
   on public.orders for insert
   with check (auth.uid() = user_id or user_id is null);
 
+create policy "Admin vê todos os pedidos"
+  on public.orders for select
+  using (public.is_admin());
+
+create policy "Admin atualiza status dos pedidos"
+  on public.orders for update
+  using (public.is_admin());
+
 -- ----------------------------------------------------------------------------
 -- ORDER_ITEMS: itens de cada pedido
 -- ----------------------------------------------------------------------------
@@ -140,9 +204,19 @@ create policy "Qualquer um pode inserir itens ao criar o pedido"
   on public.order_items for insert
   with check (true);
 
+create policy "Admin vê todos os itens de pedido"
+  on public.order_items for select
+  using (public.is_admin());
+
 -- ============================================================================
 -- FIM. Depois de rodar este script:
 -- 1. Vá em Authentication > Providers e confirme que "Email" está habilitado.
 -- 2. Copie a "Project URL" e a "anon public key" em Settings > API.
 -- 3. Cole os dois valores em js/config.js (SUPABASE_URL e SUPABASE_ANON_KEY).
+-- 4. Crie sua conta normalmente pelo site (cadastro.html) — isso cria seu
+--    usuário e seu perfil em profiles.
+-- 5. Volte aqui no SQL Editor e rode (trocando pelo seu e-mail):
+--      update public.profiles set is_admin = true
+--      where id = (select id from auth.users where email = 'seu-email@exemplo.com');
+--    A partir daí seu login vira admin e você acessa o painel em admin.html.
 -- ============================================================================
