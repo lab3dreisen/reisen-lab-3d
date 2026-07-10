@@ -6,6 +6,7 @@
  */
 
 let reisenAdminEditingId = null;
+let reisenPendingImageFile = null;
 
 async function reisenInitAdmin() {
   const gate = document.getElementById("adminGate");
@@ -46,6 +47,7 @@ async function reisenInitAdmin() {
   if (nameEl) nameEl.textContent = "Logado como " + (profile.full_name || session.user.email);
 
   reisenFillCategorySelect();
+  reisenSetupImageUpload();
   reisenLoadAdminProducts();
   reisenLoadAdminOrders("todos");
 }
@@ -93,7 +95,11 @@ async function reisenLoadAdminProducts() {
     .map(
       (p) => `
     <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:10px 8px;">${p.emoji || "📦"} ${p.name}</td>
+      <td style="padding:10px 8px;">${
+        p.image_url
+          ? `<img src="${p.image_url}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:6px;">`
+          : (p.emoji || "📦") + " "
+      }${p.name}</td>
       <td style="padding:10px 8px;">${(window.REISEN_CATEGORIES.find((c) => c.slug === p.category) || {}).name || p.category}</td>
       <td style="padding:10px 8px;">${reisenFormatBRL(Number(p.price))}${
         p.old_price ? `<br><span class="price-old">${reisenFormatBRL(Number(p.old_price))}</span>` : ""
@@ -118,6 +124,7 @@ async function reisenLoadAdminProducts() {
 
 function reisenOpenProductForm(product) {
   reisenAdminEditingId = product ? product.id : null;
+  reisenPendingImageFile = null;
   document.getElementById("productFormTitle").textContent = product ? "Editar produto" : "Novo produto";
   const f = document.getElementById("productForm");
   f.name.value = product ? product.name : "";
@@ -127,10 +134,28 @@ function reisenOpenProductForm(product) {
   f.old_price.value = product && product.old_price !== null ? product.old_price : "";
   f.stock.value = product ? product.stock : 0;
   f.emoji.value = product && product.emoji ? product.emoji : "";
-  f.image_url.value = product && product.image_url ? product.image_url : "";
   f.badge.value = product && product.badge ? product.badge : "";
   f.description.value = product && product.description ? product.description : "";
   f.active.checked = product ? !!product.active : true;
+
+  document.getElementById("productImageInput").value = "";
+  const preview = document.getElementById("imagePreview");
+  const label = document.getElementById("imageDropLabel");
+  const removeBtn = document.getElementById("removeImageBtn");
+  if (product && product.image_url) {
+    f.image_url.value = product.image_url;
+    preview.src = product.image_url;
+    preview.classList.remove("hidden");
+    label.classList.add("hidden");
+    removeBtn.classList.remove("hidden");
+  } else {
+    f.image_url.value = "";
+    preview.src = "";
+    preview.classList.add("hidden");
+    label.classList.remove("hidden");
+    removeBtn.classList.add("hidden");
+  }
+
   document.getElementById("productFormCard").classList.remove("hidden");
   document.getElementById("productFormCard").scrollIntoView({ behavior: "smooth" });
 }
@@ -139,6 +164,78 @@ function reisenCloseProductForm() {
   document.getElementById("productFormCard").classList.add("hidden");
   document.getElementById("productForm").reset();
   reisenAdminEditingId = null;
+  reisenRemoveProductImage();
+}
+
+/* ---- Upload de foto (arrastar-e-soltar) ---- */
+
+function reisenSetupImageUpload() {
+  const zone = document.getElementById("imageDropZone");
+  const input = document.getElementById("productImageInput");
+  if (!zone || !input || zone.dataset.wired) return;
+  zone.dataset.wired = "1";
+
+  zone.addEventListener("click", () => input.click());
+
+  input.addEventListener("change", () => {
+    if (input.files && input.files[0]) reisenHandleImageFile(input.files[0]);
+  });
+
+  ["dragover", "dragenter"].forEach((evt) =>
+    zone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      zone.classList.add("drag-over");
+    })
+  );
+  ["dragleave", "dragend"].forEach((evt) =>
+    zone.addEventListener(evt, () => zone.classList.remove("drag-over"))
+  );
+  zone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.classList.remove("drag-over");
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) reisenHandleImageFile(file);
+  });
+}
+
+function reisenHandleImageFile(file) {
+  if (!file.type.startsWith("image/")) {
+    reisenToast("O arquivo precisa ser uma imagem");
+    return;
+  }
+  reisenPendingImageFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const preview = document.getElementById("imagePreview");
+    preview.src = e.target.result;
+    preview.classList.remove("hidden");
+    document.getElementById("imageDropLabel").classList.add("hidden");
+    document.getElementById("removeImageBtn").classList.remove("hidden");
+  };
+  reader.readAsDataURL(file);
+}
+
+function reisenRemoveProductImage() {
+  reisenPendingImageFile = null;
+  const f = document.getElementById("productForm");
+  if (f) f.image_url.value = "";
+  document.getElementById("imagePreview").src = "";
+  document.getElementById("imagePreview").classList.add("hidden");
+  document.getElementById("imageDropLabel").classList.remove("hidden");
+  document.getElementById("removeImageBtn").classList.add("hidden");
+  document.getElementById("productImageInput").value = "";
+}
+
+async function reisenUploadProductImage(file) {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const fileName = `produto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await window.reisenSupabase.storage.from("produtos").upload(fileName, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = window.reisenSupabase.storage.from("produtos").getPublicUrl(fileName);
+  return data.publicUrl;
 }
 
 function reisenEditProduct(id) {
@@ -163,37 +260,57 @@ async function reisenSubmitProductForm(e) {
   const errorBox = document.getElementById("productFormError");
   errorBox.style.display = "none";
 
-  const name = f.name.value.trim();
-  const payload = {
-    name: name,
-    slug: f.slug.value.trim() || reisenSlugify(name),
-    category: f.category.value,
-    price: parseFloat(f.price.value),
-    old_price: f.old_price.value ? parseFloat(f.old_price.value) : null,
-    stock: parseInt(f.stock.value, 10) || 0,
-    emoji: f.emoji.value.trim() || null,
-    image_url: f.image_url.value.trim() || null,
-    badge: f.badge.value.trim() || null,
-    description: f.description.value.trim(),
-    active: f.active.checked,
-  };
+  const submitBtn = f.querySelector('button[type="submit"]');
+  const originalBtnText = submitBtn.textContent;
 
-  let error;
-  if (reisenAdminEditingId) {
-    ({ error } = await window.reisenSupabase.from("products").update(payload).eq("id", reisenAdminEditingId));
-  } else {
-    ({ error } = await window.reisenSupabase.from("products").insert(payload));
-  }
+  try {
+    let imageUrl = f.image_url.value.trim() || null;
 
-  if (error) {
-    errorBox.textContent = "Não foi possível salvar: " + error.message;
+    if (reisenPendingImageFile) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Enviando foto…";
+      imageUrl = await reisenUploadProductImage(reisenPendingImageFile);
+    }
+
+    const name = f.name.value.trim();
+    const payload = {
+      name: name,
+      slug: f.slug.value.trim() || reisenSlugify(name),
+      category: f.category.value,
+      price: parseFloat(f.price.value),
+      old_price: f.old_price.value ? parseFloat(f.old_price.value) : null,
+      stock: parseInt(f.stock.value, 10) || 0,
+      emoji: f.emoji.value.trim() || null,
+      image_url: imageUrl,
+      badge: f.badge.value.trim() || null,
+      description: f.description.value.trim(),
+      active: f.active.checked,
+    };
+
+    submitBtn.textContent = "Salvando…";
+    let error;
+    if (reisenAdminEditingId) {
+      ({ error } = await window.reisenSupabase.from("products").update(payload).eq("id", reisenAdminEditingId));
+    } else {
+      ({ error } = await window.reisenSupabase.from("products").insert(payload));
+    }
+
+    if (error) {
+      errorBox.textContent = "Não foi possível salvar: " + error.message;
+      errorBox.style.display = "block";
+      return;
+    }
+
+    reisenToast("Produto salvo com sucesso");
+    reisenCloseProductForm();
+    reisenLoadAdminProducts();
+  } catch (err) {
+    errorBox.textContent = "Erro ao enviar a foto: " + (err.message || err);
     errorBox.style.display = "block";
-    return;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalBtnText;
   }
-
-  reisenToast("Produto salvo com sucesso");
-  reisenCloseProductForm();
-  reisenLoadAdminProducts();
 }
 
 async function reisenToggleProductActive(id, newState) {
