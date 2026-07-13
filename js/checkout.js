@@ -1,11 +1,12 @@
 /**
  * Fluxo de checkout.
- * Hoje: grava o pedido no Supabase (tabelas orders/order_items) com status
- * "aguardando_pagamento" e mostra confirmação — sem cobrança real ainda.
- * Próximo passo (quando a InfinitePay for plugada): chamar uma Supabase
- * Edge Function que gera o link de pagamento (POST /links da InfinitePay)
- * e redireciona o cliente para a URL de checkout retornada (ver
- * supabase/edge-functions/create-infinitepay-link).
+ * Grava o pedido no Supabase (tabelas orders/order_items) com status
+ * "aguardando_pagamento" e, fora do modo demonstração, chama a Edge Function
+ * "create-infinitepay-link" para gerar o link de pagamento da InfinitePay e
+ * redireciona o cliente para lá (Pix ou cartão). O pedido só passa para
+ * "pago" quando a InfinitePay confirma via webhook (ver
+ * supabase/edge-functions/infinitepay-webhook) — a tela de confirmação é
+ * só uma tela de "obrigado", não é o que marca o pagamento.
  */
 
 function reisenRenderCheckoutSummary() {
@@ -78,9 +79,27 @@ async function reisenSubmitOrder(formData) {
   const { error: itemsError } = await window.reisenSupabase.from("order_items").insert(orderItems);
   if (itemsError) return { orderId: orderRow.id, error: itemsError };
 
-  // TODO (próximo passo): chamar Edge Function "create-infinitepay-link" aqui,
-  // passando orderRow.id e os items, e redirecionar o cliente para o link
-  // de pagamento (campo "url") retornado pela InfinitePay.
-
   return { orderId: orderRow.id, error: null };
+}
+
+/**
+ * Chama a Edge Function que gera o link de pagamento da InfinitePay para um
+ * pedido já criado. Lança um erro se não conseguir gerar o link — quem
+ * chamar essa função deve decidir o que fazer nesse caso (ex.: redirecionar
+ * para a tela de confirmação mesmo assim, já que o pedido já está salvo).
+ */
+async function reisenCreateInfinitePayLink(orderId) {
+  const res = await fetch(`${window.REISEN_CONFIG.SUPABASE_URL}/functions/v1/create-infinitepay-link`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${window.REISEN_CONFIG.SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ orderId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) {
+    throw new Error((data && data.error) || "Não foi possível gerar o link de pagamento.");
+  }
+  return data.url;
 }
