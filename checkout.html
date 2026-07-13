@@ -72,7 +72,7 @@
 
           <h3 style="margin-top:24px;">Endereço de entrega</h3>
           <div class="field-row">
-            <div class="field"><label>CEP</label><input type="text" name="cep" required></div>
+            <div class="field"><label>CEP</label><input type="text" name="cep" required maxlength="9" placeholder="00000-000" oninput="reisenHandleShippingLookup()"></div>
             <div class="field"><label>Cidade</label><input type="text" name="city" required></div>
           </div>
           <div class="field-row">
@@ -84,6 +84,11 @@
             <div class="field"><label>Estado (UF)</label><input type="text" name="state" maxlength="2" required></div>
           </div>
           <div class="field"><label>Complemento (opcional)</label><input type="text" name="complement"></div>
+
+          <h3 style="margin-top:24px;">Frete</h3>
+          <div id="shippingOptionsBox" class="hidden">
+            <p class="form-note">Digite o CEP acima para ver as opções de frete.</p>
+          </div>
 
           <h3 style="margin-top:24px;">Forma de pagamento</h3>
           <div class="pay-methods">
@@ -103,6 +108,7 @@
       <div class="card">
         <h3>Seu pedido</h3>
         <div id="checkoutItems"></div>
+        <div class="summary-row hidden" id="checkoutShippingRow"><span>Frete</span><span id="checkoutShipping"></span></div>
         <div class="summary-row total"><span>Total</span><span id="checkoutTotal"></span></div>
       </div>
     </div>
@@ -210,6 +216,14 @@
     errorBox.style.display = 'none';
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner"></span> Processando...';
+
+    if (!window.REISEN_DEMO_MODE && !reisenSelectedShipping) {
+      errorBox.textContent = 'Informe um CEP válido e escolha uma opção de frete antes de continuar.';
+      errorBox.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Confirmar pedido';
+      return;
+    }
 
     const formData = Object.fromEntries(new FormData(e.target).entries());
     const { orderId, error } = await reisenSubmitOrder(formData);
