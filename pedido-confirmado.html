@@ -49,13 +49,14 @@
 <main>
   <div class="container" style="max-width:640px; padding: 70px 20px;">
     <div class="card text-center">
-      <div style="font-size:3.4rem; margin-bottom: 10px;">✅</div>
-      <h1>Pedido recebido!</h1>
-      <p>Seu pedido <strong id="orderIdDisplay"></strong> foi registrado com o status <span class="status-pill status-aguardando_pagamento">aguardando pagamento</span>.</p>
-      <p class="form-note">A cobrança automática via InfinitePay ainda está sendo configurada. Nossa equipe vai entrar em contato pelo WhatsApp ou e-mail informado para combinar o pagamento e a entrega.</p>
+      <div style="font-size:3.4rem; margin-bottom: 10px;" id="orderIcon">✅</div>
+      <h1 id="orderTitle">Pedido recebido!</h1>
+      <p>Seu pedido <strong id="orderIdDisplay"></strong> foi registrado com o status <span class="status-pill status-aguardando_pagamento" id="statusPill">aguardando pagamento</span>.</p>
+      <p class="form-note" id="statusNote">Assim que o pagamento for confirmado pela InfinitePay, atualizamos automaticamente o status aqui e no seu pedido. Se você chegou até essa tela sem concluir o pagamento, pode reabrir o link ou falar com a gente pelo WhatsApp.</p>
       <div class="hero-actions" style="justify-content:center; margin-top:20px;">
         <a href="loja.html" class="btn btn-primary">Continuar comprando</a>
-        <a href="#" class="btn btn-outline" data-whatsapp="Olá! Acabei de fazer um pedido no site da REISEN LAB 3D e gostaria de combinar o pagamento.">Falar no WhatsApp</a>
+        <a href="#" id="receiptLink" class="btn btn-outline hidden" target="_blank" rel="noopener">Ver comprovante</a>
+        <a href="#" class="btn btn-outline" data-whatsapp="Olá! Acabei de fazer um pedido no site da REISEN LAB 3D e gostaria de confirmar o pagamento.">Falar no WhatsApp</a>
       </div>
     </div>
   </div>
@@ -149,8 +150,31 @@
 <script src="js/auth.js"></script>
 <script src="js/main.js"></script>
 <script>
-  const orderId = new URLSearchParams(window.location.search).get('id') || '—';
+  const qs = new URLSearchParams(window.location.search);
+  const orderId = qs.get('id') || '—';
   document.getElementById('orderIdDisplay').textContent = '#' + orderId;
+
+  // Parâmetros que a InfinitePay acrescenta ao redirecionar de volta depois
+  // do pagamento (ver supabase/edge-functions/create-infinitepay-link).
+  // Isso é só cosmético (mensagem da tela) — quem realmente confirma o
+  // pagamento no banco é o webhook, não essa página.
+  const captureMethod = qs.get('capture_method');
+  const receiptUrl = qs.get('receipt_url');
+
+  if (captureMethod) {
+    document.getElementById('orderIcon').textContent = '✅';
+    document.getElementById('orderTitle').textContent = 'Pagamento confirmado!';
+    const pill = document.getElementById('statusPill');
+    pill.textContent = 'pago';
+    pill.className = 'status-pill status-pago';
+    const metodo = captureMethod === 'pix' ? 'via Pix' : captureMethod === 'debit_card' ? 'no cartão de débito' : 'no cartão de crédito';
+    document.getElementById('statusNote').textContent = `Pagamento aprovado ${metodo}. Vamos preparar seu pedido para envio!`;
+    if (receiptUrl) {
+      const link = document.getElementById('receiptLink');
+      link.href = receiptUrl;
+      link.classList.remove('hidden');
+    }
+  }
 </script>
 </body>
 </html>
