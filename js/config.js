@@ -20,9 +20,11 @@ window.REISEN_CONFIG = {
 
   // Métodos de pagamento habilitados no checkout
   PAYMENTS: {
-    infinitepay: { enabled: true, comingSoon: true }, // estrutura pronta, integração real pendente
+    infinitepay: { enabled: true, comingSoon: false }, // cobrança automática ativa via Edge Functions
   },
-  INFINITEPAY_HANDLE: "sua_infinite_tag", // @handle da sua conta InfinitePay
+  // Observação: o handle (InfiniteTag) da InfinitePay NÃO fica aqui — ele é
+  // configurado como secret (INFINITEPAY_HANDLE) direto na Edge Function
+  // "create-infinitepay-link" no painel do Supabase, não no front-end.
 };
 
 window.REISEN_DEMO_MODE =
