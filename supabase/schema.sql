@@ -71,8 +71,21 @@ create table if not exists public.products (
   badge text,
   stock integer not null default 0,
   active boolean not null default true,
+  -- Peso e dimensões da embalagem, usados para cotar o frete automático
+  -- (Melhor Envio). Padrão = uma caixa pequena genérica (300g, 16x11x11cm).
+  weight_kg numeric(10,3) not null default 0.3,
+  length_cm numeric(10,1) not null default 16,
+  width_cm numeric(10,1) not null default 11,
+  height_cm numeric(10,1) not null default 11,
   created_at timestamptz not null default now()
 );
+
+-- Se a tabela "products" já existia antes desse recurso (frete automático),
+-- rode só este bloco para adicionar as colunas novas sem apagar nada:
+alter table public.products add column if not exists weight_kg numeric(10,3) not null default 0.3;
+alter table public.products add column if not exists length_cm numeric(10,1) not null default 16;
+alter table public.products add column if not exists width_cm numeric(10,1) not null default 11;
+alter table public.products add column if not exists height_cm numeric(10,1) not null default 11;
 
 alter table public.products enable row level security;
 
@@ -155,8 +168,20 @@ create table if not exists public.orders (
   total numeric(10,2) not null,
   ip_checkout_url text,   -- URL do link de pagamento retornado pela InfinitePay
   ip_invoice_slug text,   -- identificador da transação retornado pelo webhook da InfinitePay
+  -- Frete escolhido pelo cliente no checkout (cotado via Melhor Envio).
+  shipping_cost numeric(10,2) not null default 0,
+  shipping_carrier text,      -- ex.: "Correios", "Jadlog"
+  shipping_service text,      -- ex.: "PAC", "SEDEX"
+  shipping_days integer,      -- prazo estimado em dias úteis
   created_at timestamptz not null default now()
 );
+
+-- Se a tabela "orders" já existia antes desse recurso (frete automático),
+-- rode só este bloco para adicionar as colunas novas sem apagar nada:
+alter table public.orders add column if not exists shipping_cost numeric(10,2) not null default 0;
+alter table public.orders add column if not exists shipping_carrier text;
+alter table public.orders add column if not exists shipping_service text;
+alter table public.orders add column if not exists shipping_days integer;
 
 alter table public.orders enable row level security;
 
@@ -207,6 +232,23 @@ create policy "Qualquer um pode inserir itens ao criar o pedido"
 create policy "Admin vê todos os itens de pedido"
   on public.order_items for select
   using (public.is_admin());
+
+-- ----------------------------------------------------------------------------
+-- MELHOR_ENVIO_TOKENS: guarda o token OAuth do Melhor Envio (frete automático)
+-- Só uma linha (id = 1). Só as Edge Functions (com a service_role key) leem
+-- e escrevem aqui — por isso não existe nenhuma policy de select/insert para
+-- "authenticated"/"anon", ficando bloqueado por padrão com RLS ligado.
+-- ----------------------------------------------------------------------------
+create table if not exists public.melhor_envio_tokens (
+  id integer primary key default 1,
+  access_token text,
+  refresh_token text,
+  expires_at timestamptz,
+  updated_at timestamptz not null default now(),
+  constraint melhor_envio_tokens_single_row check (id = 1)
+);
+
+alter table public.melhor_envio_tokens enable row level security;
 
 -- ============================================================================
 -- FIM. Depois de rodar este script:
