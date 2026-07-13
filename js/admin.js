@@ -415,6 +415,9 @@ async function reisenLoadAdminOrders(statusFilter) {
  * etiqueta, mostra o botão "Gerar etiqueta"; caso contrário não mostra nada.
  */
 function reisenLabelBoxHTML(o) {
+  if (o.shipping_carrier === "Retirada no local") {
+    return `<strong>Retirada no local</strong> — combine o horário com o cliente, não precisa de etiqueta.`;
+  }
   if (o.label_url) {
     return `<strong>Etiqueta:</strong> <a href="${o.label_url}" target="_blank" rel="noopener">Ver/imprimir etiqueta</a>${
       o.tracking_code ? ` · Rastreio: <strong>${o.tracking_code}</strong>` : ""
