@@ -1,45 +1,60 @@
 // ============================================================================
-// REISEN LAB 3D — Edge Function: create-infinitepay-link (ESQUELETO)
+// REISEN LAB 3D — Edge Function: create-infinitepay-link
 // ----------------------------------------------------------------------------
-// Isso ainda NÃO está ativo. É o próximo passo para ligar a InfinitePay.
+// Recebe o ID de um pedido já criado pelo checkout (orders.id), monta o
+// payload com os itens do pedido e chama a API de Checkout Integrado da
+// InfinitePay (POST /links) para gerar um link de pagamento (Pix ou cartão,
+// com Pix sem taxa e cartão parcelado conforme configurado na sua conta
+// InfinitePay). Salva a URL em orders.ip_checkout_url e devolve para o site,
+// que redireciona o cliente até ela.
 //
-// O que essa função vai fazer quando for implementada:
-//   1. Receber o ID de um pedido (orders.id) já criado pelo checkout.
-//   2. Buscar o pedido e seus itens no banco (com o supabase-js "service role").
-//   3. Chamar a API de Checkout Integrado da InfinitePay (POST /links) para
-//      gerar um link de pagamento com os itens do pedido.
-//   4. Salvar a URL do link em orders.ip_checkout_url.
-//   5. Devolver essa URL para o site, que redireciona o cliente até ela —
-//      lá ele paga com Pix (grátis) ou cartão (até 12x).
+// Como publicar (painel do Supabase, sem precisar de terminal):
+//   1. No Supabase, vá em Edge Functions > Create a new function.
+//   2. Nome da função: create-infinitepay-link
+//   3. Cole o conteúdo deste arquivo e clique em Deploy.
+//   4. Nas configurações da função (Secrets/Environment variables), defina:
+//        INFINITEPAY_HANDLE          = sua InfiniteTag, sem o "$" (ex.: reisenlab3d)
+//        SUPABASE_URL                = a mesma URL do seu projeto (Settings > API)
+//        SUPABASE_SERVICE_ROLE_KEY   = a "service_role" key (Settings > API — NUNCA
+//                                       coloque essa chave no front-end/js/config.js)
+//        SITE_URL                    = https://SEU-USUARIO.github.io/reisen-lab-3d
 //
-// Como publicar (quando for usar):
-//   supabase functions deploy create-infinitepay-link
-//   supabase secrets set INFINITEPAY_HANDLE=sua_infinite_tag
-//
-// Depois, no checkout.js, troque o comentário "TODO" por uma chamada a:
-//   fetch(`${SUPABASE_URL}/functions/v1/create-infinitepay-link`, {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anonKey}` },
-//     body: JSON.stringify({ orderId })
-//   })
-// e redirecionar o navegador para a "url" recebida na resposta.
-//
-// Documentação oficial: https://www.infinitepay.io/checkout-documentacao
+// Documentação oficial: https://ajuda.infinitepay.io/pt-BR/articles/10766888
 // ============================================================================
 
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const INFINITEPAY_HANDLE = Deno.env.get("INFINITEPAY_HANDLE") ?? ""; // @handle da conta InfinitePay
+const INFINITEPAY_HANDLE = Deno.env.get("INFINITEPAY_HANDLE") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const SITE_URL = Deno.env.get("SITE_URL") ?? "https://SEU-SITE"; // ex: https://SEU-USUARIO.github.io/reisen-lab-3d
+const SITE_URL = Deno.env.get("SITE_URL") ?? "https://SEU-SITE";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS_HEADERS });
+  }
+
   try {
+    if (!INFINITEPAY_HANDLE) {
+      return new Response(JSON.stringify({ error: "INFINITEPAY_HANDLE não configurado nas secrets da função." }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+      });
+    }
+
     const { orderId } = await req.json();
     if (!orderId) {
-      return new Response(JSON.stringify({ error: "orderId é obrigatório" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "orderId é obrigatório" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+      });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -51,21 +66,30 @@ serve(async (req) => {
       .single();
 
     if (error || !order) {
-      return new Response(JSON.stringify({ error: "Pedido não encontrado" }), { status: 404 });
+      return new Response(JSON.stringify({ error: "Pedido não encontrado" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+      });
     }
 
-    // --- Monta o payload do link de pagamento da InfinitePay ---
-    // Observação: "price" é em centavos (ex.: R$ 89,90 -> 8990).
+    // Preço sempre em centavos (ex.: R$ 89,90 -> 8990).
     const linkBody = {
       handle: INFINITEPAY_HANDLE,
       redirect_url: `${SITE_URL}/pedido-confirmado.html?id=${order.id}`,
-      webhook_url: `${SUPABASE_URL}/functions/v1/infinitepay-webhook`, // criar depois, para receber confirmação de pagamento
+      webhook_url: `${SUPABASE_URL}/functions/v1/infinitepay-webhook`,
       order_nsu: order.id,
       customer: {
         name: order.customer_name,
         email: order.customer_email,
         phone_number: order.customer_phone,
       },
+      address: order.shipping_address
+        ? {
+            cep: order.shipping_address.cep,
+            number: order.shipping_address.number,
+            complement: order.shipping_address.complement || undefined,
+          }
+        : undefined,
       items: order.order_items.map((item: any) => ({
         quantity: item.quantity,
         price: Math.round(Number(item.unit_price) * 100),
@@ -73,49 +97,40 @@ serve(async (req) => {
       })),
     };
 
+    console.log("Enviando para InfinitePay:", JSON.stringify(linkBody));
+
     const ipResponse = await fetch("https://api.checkout.infinitepay.io/links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(linkBody),
     });
 
-    const ipData = await ipResponse.json();
+    const ipText = await ipResponse.text();
+    console.log("Resposta da InfinitePay (status " + ipResponse.status + "):", ipText);
 
-    if (!ipResponse.ok) {
+    let ipData: Record<string, any> = {};
+    try {
+      ipData = JSON.parse(ipText);
+    } catch (_e) {
+      ipData = { raw: ipText };
+    }
+
+    if (!ipResponse.ok || !ipData.url) {
       return new Response(
         JSON.stringify({ error: "Falha ao criar link de pagamento na InfinitePay", details: ipData }),
-        { status: 500 }
+        { status: 502, headers: { "Content-Type": "application/json", ...CORS_HEADERS } }
       );
     }
 
     await supabase.from("orders").update({ ip_checkout_url: ipData.url }).eq("id", orderId);
 
     return new Response(JSON.stringify({ url: ipData.url }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    });
   }
 });
-
-// ----------------------------------------------------------------------------
-// Webhook (função separada "infinitepay-webhook", a criar quando for usar):
-// A InfinitePay envia um POST para webhook_url quando o pagamento é concluído,
-// com um payload como:
-//   {
-//     "invoice_slug":    "abc123",
-//     "amount":          8990,
-//     "paid_amount":     8990,
-//     "installments":    1,
-//     "capture_method":  "credit_card" | "pix",
-//     "transaction_nsu": "UUID",
-//     "order_nsu":       "<order.id enviado acima>",
-//     "receipt_url":     "https://comprovante...",
-//     "items": [...]
-//   }
-// Nessa função, responda 200 OK e atualize:
-//   orders.status = 'pago'
-//   orders.ip_invoice_slug = invoice_slug
-// usando order_nsu para encontrar o pedido certo.
-// Se você responder algo diferente de 200, a InfinitePay tenta reenviar.
-// ----------------------------------------------------------------------------
