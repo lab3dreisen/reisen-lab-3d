@@ -135,6 +135,10 @@ function reisenOpenProductForm(product) {
   f.stock.value = product ? product.stock : 0;
   f.emoji.value = product && product.emoji ? product.emoji : "";
   f.badge.value = product && product.badge ? product.badge : "";
+  f.weight_kg.value = product && product.weight_kg ? product.weight_kg : 0.3;
+  f.length_cm.value = product && product.length_cm ? product.length_cm : 16;
+  f.width_cm.value = product && product.width_cm ? product.width_cm : 11;
+  f.height_cm.value = product && product.height_cm ? product.height_cm : 11;
   f.description.value = product && product.description ? product.description : "";
   f.active.checked = product ? !!product.active : true;
 
@@ -283,6 +287,10 @@ async function reisenSubmitProductForm(e) {
       emoji: f.emoji.value.trim() || null,
       image_url: imageUrl,
       badge: f.badge.value.trim() || null,
+      weight_kg: parseFloat(f.weight_kg.value) || 0.3,
+      length_cm: parseFloat(f.length_cm.value) || 16,
+      width_cm: parseFloat(f.width_cm.value) || 11,
+      height_cm: parseFloat(f.height_cm.value) || 11,
       description: f.description.value.trim(),
       active: f.active.checked,
     };
@@ -386,6 +394,9 @@ async function reisenLoadAdminOrders(statusFilter) {
         <div class="form-note mb-0"><strong>Endereço:</strong> ${addr.street || ""}, ${addr.number || ""} ${
         addr.complement || ""
       } — ${addr.neighborhood || ""}, ${addr.city || ""}/${addr.state || ""} — CEP ${addr.cep || ""}</div>
+        <div class="form-note mb-0" style="margin-top:6px;"><strong>Frete:</strong> ${
+          o.shipping_carrier ? `${o.shipping_carrier} ${o.shipping_service || ""} — ${reisenFormatBRL(Number(o.shipping_cost || 0))}${o.shipping_days ? ` (${o.shipping_days} dias úteis)` : ""}` : "não informado"
+        }</div>
         <div class="form-note mb-0" style="margin-top:6px;"><strong>Itens:</strong> ${o.order_items
           .map((i) => `${i.quantity}x ${i.product_name}`)
           .join(", ")}</div>
