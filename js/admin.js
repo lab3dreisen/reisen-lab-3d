@@ -400,10 +400,67 @@ async function reisenLoadAdminOrders(statusFilter) {
         <div class="form-note mb-0" style="margin-top:6px;"><strong>Itens:</strong> ${o.order_items
           .map((i) => `${i.quantity}x ${i.product_name}`)
           .join(", ")}</div>
+        <div class="form-note mb-0" style="margin-top:10px;" id="labelBox-${o.id}">
+          ${reisenLabelBoxHTML(o)}
+        </div>
       </div>
     </div>`;
     })
     .join("");
+}
+
+/**
+ * HTML da área de etiqueta de cada pedido: se já tem etiqueta gerada, mostra
+ * o link de impressão e o rastreio; se o pedido está pago e ainda não tem
+ * etiqueta, mostra o botão "Gerar etiqueta"; caso contrário não mostra nada.
+ */
+function reisenLabelBoxHTML(o) {
+  if (o.label_url) {
+    return `<strong>Etiqueta:</strong> <a href="${o.label_url}" target="_blank" rel="noopener">Ver/imprimir etiqueta</a>${
+      o.tracking_code ? ` · Rastreio: <strong>${o.tracking_code}</strong>` : ""
+    }`;
+  }
+  if (o.status === "pago") {
+    return `<button type="button" class="btn btn-outline btn-sm" onclick="reisenGenerateLabel('${o.id}', this)">Gerar etiqueta (Melhor Envio)</button>`;
+  }
+  return "";
+}
+
+/**
+ * Chama a Edge Function generate-shipping-label com o token de sessão do
+ * admin logado (não a anon key) — a função verifica no servidor se quem
+ * chamou é realmente admin antes de gastar saldo da carteira Melhor Envio.
+ */
+async function reisenGenerateLabel(orderId, btn) {
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Gerando etiqueta…";
+
+  try {
+    const session = await reisenGetSession();
+    if (!session) throw new Error("Sessão expirada, faça login de novo.");
+
+    const res = await fetch(`${window.REISEN_CONFIG.SUPABASE_URL}/functions/v1/generate-shipping-label`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ orderId }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok || !data.success) {
+      throw new Error((data && data.error) || "Falha ao gerar etiqueta.");
+    }
+
+    reisenToast("Etiqueta gerada com sucesso!");
+    reisenLoadAdminOrders(document.querySelector(".orders-filter .filter-chip.active")?.dataset.status || "todos");
+  } catch (err) {
+    reisenToast("Erro: " + (err.message || err));
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 async function reisenUpdateOrderStatus(orderId, newStatus) {
