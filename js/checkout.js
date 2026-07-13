@@ -7,12 +7,17 @@
  * "pago" quando a InfinitePay confirma via webhook (ver
  * supabase/edge-functions/infinitepay-webhook) — a tela de confirmação é
  * só uma tela de "obrigado", não é o que marca o pagamento.
+ *
+ * O frete é cotado em tempo real via Edge Function "calculate-shipping"
+ * (Melhor Envio) assim que o cliente termina de digitar o CEP, e o valor
+ * escolhido é somado ao total antes de gerar o link de pagamento.
  */
+
+let reisenSelectedShipping = null;
 
 function reisenRenderCheckoutSummary() {
   const items = reisenCartItemsWithData();
   const list = document.getElementById("checkoutItems");
-  const totalEl = document.getElementById("checkoutTotal");
   if (!list) return;
   if (items.length === 0) {
     window.location.href = "carrinho.html";
@@ -27,12 +32,124 @@ function reisenRenderCheckoutSummary() {
     </div>`
     )
     .join("");
-  if (totalEl) totalEl.textContent = reisenFormatBRL(reisenCartTotal());
+  reisenUpdateCheckoutTotals();
+}
+
+function reisenUpdateCheckoutTotals() {
+  const totalEl = document.getElementById("checkoutTotal");
+  const shippingRow = document.getElementById("checkoutShippingRow");
+  const shippingEl = document.getElementById("checkoutShipping");
+  const productsTotal = reisenCartTotal();
+
+  if (shippingEl && shippingRow) {
+    if (reisenSelectedShipping) {
+      shippingEl.textContent = reisenFormatBRL(reisenSelectedShipping.price);
+      shippingRow.classList.remove("hidden");
+    } else {
+      shippingRow.classList.add("hidden");
+    }
+  }
+
+  const grandTotal = productsTotal + (reisenSelectedShipping ? reisenSelectedShipping.price : 0);
+  if (totalEl) totalEl.textContent = reisenFormatBRL(grandTotal);
+}
+
+/**
+ * Chama a Edge Function "calculate-shipping" com o CEP informado e os itens
+ * do carrinho, e devolve a lista de opções (transportadora, serviço, preço,
+ * prazo). Lança erro se não conseguir cotar.
+ */
+async function reisenFetchShippingOptions(cep) {
+  const items = reisenCartItemsWithData().map((i) => ({
+    productId: i.product.id,
+    quantity: i.qty,
+    price: i.product.price,
+  }));
+
+  const res = await fetch(`${window.REISEN_CONFIG.SUPABASE_URL}/functions/v1/calculate-shipping`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${window.REISEN_CONFIG.SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ cep, items }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.options) {
+    throw new Error((data && data.error) || "Não foi possível calcular o frete para esse CEP.");
+  }
+  return data.options;
+}
+
+/**
+ * Dispara a cotação de frete para o CEP atual do formulário, mostra estado de
+ * carregamento/erro e renderiza as opções assim que chegarem.
+ */
+async function reisenHandleShippingLookup() {
+  const cepInput = document.querySelector('#checkoutForm [name="cep"]');
+  const box = document.getElementById("shippingOptionsBox");
+  if (!cepInput || !box) return;
+
+  const cep = cepInput.value.replace(/\D/g, "");
+  reisenSelectedShipping = null;
+  reisenUpdateCheckoutTotals();
+
+  if (cep.length !== 8) {
+    box.innerHTML = "";
+    box.classList.add("hidden");
+    return;
+  }
+
+  box.classList.remove("hidden");
+  box.innerHTML = '<p class="form-note">Calculando opções de frete…</p>';
+
+  if (window.REISEN_DEMO_MODE) {
+    box.innerHTML = '<p class="form-note">Cálculo de frete disponível quando o Supabase estiver configurado (modo demonstração).</p>';
+    return;
+  }
+
+  try {
+    const options = await reisenFetchShippingOptions(cep);
+    box.innerHTML =
+      '<div class="pay-methods">' +
+      options
+        .map(
+          (opt, idx) => `
+      <label class="pay-method${idx === 0 ? " selected" : ""}">
+        <input type="radio" name="shippingOption" value="${idx}" ${idx === 0 ? "checked" : ""} onchange="reisenSelectShippingOption(${idx})">
+        <div>
+          <div class="tit">${opt.carrier} — ${opt.service}</div>
+          <p class="desc">${reisenFormatBRL(opt.price)}${opt.days ? ` · até ${opt.days} dias úteis` : ""}</p>
+        </div>
+      </label>`
+        )
+        .join("") +
+      "</div>";
+    window._reisenShippingOptions = options;
+    reisenSelectShippingOption(0);
+  } catch (err) {
+    box.innerHTML = `<p class="form-note" style="color:var(--danger);">${err.message}</p>`;
+  }
+}
+
+function reisenSelectShippingOption(idx) {
+  const options = window._reisenShippingOptions || [];
+  reisenSelectedShipping = options[idx] || null;
+  reisenUpdateCheckoutTotals();
+
+  const box = document.getElementById("shippingOptionsBox");
+  if (box) {
+    box.querySelectorAll(".pay-method").forEach((label, i) => {
+      label.classList.toggle("selected", i === idx);
+    });
+  }
 }
 
 async function reisenSubmitOrder(formData) {
   const items = reisenCartItemsWithData();
-  const total = reisenCartTotal();
+  const productsTotal = reisenCartTotal();
+  const shipping = reisenSelectedShipping;
+  const total = productsTotal + (shipping ? shipping.price : 0);
   const session = await reisenGetSession();
 
   const order = {
@@ -51,6 +168,10 @@ async function reisenSubmitOrder(formData) {
     payment_method: "infinitepay",
     status: "aguardando_pagamento",
     total: total,
+    shipping_cost: shipping ? shipping.price : 0,
+    shipping_carrier: shipping ? shipping.carrier : null,
+    shipping_service: shipping ? shipping.service : null,
+    shipping_days: shipping ? shipping.days : null,
   };
 
   if (window.REISEN_DEMO_MODE) {
