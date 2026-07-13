@@ -35,7 +35,8 @@ js/admin.js                  Lógica do painel administrativo
 js/cart.js, auth.js, checkout.js, account.js, main.js   Lógica do site
 assets/logo.svg              Ícone recriado a partir da identidade visual
 supabase/schema.sql           Script para criar as tabelas no Supabase (produtos, pedidos, admins)
-supabase/edge-functions/create-infinitepay-link/index.ts   Esqueleto p/ InfinitePay (próximo passo)
+supabase/edge-functions/create-infinitepay-link/index.ts   Gera o link de pagamento InfinitePay
+supabase/edge-functions/infinitepay-webhook/index.ts        Confirma o pagamento e marca o pedido como pago
 ```
 
 ## Passo a passo — publicar no GitHub Pages
@@ -114,35 +115,58 @@ Para tornar uma conta admin:
 
 Repita o passo 2 para cada pessoa que precisar de acesso de editor.
 
-## Pagamento: onde está a InfinitePay hoje
+## Pagamento: InfinitePay (Pix, crédito e débito automáticos)
 
-Como combinado, por enquanto o checkout só monta a **estrutura**: o cliente
-preenche endereço e dados, escolhe "InfinitePay" (já indicado como "em
-breve" na tela) e o pedido é salvo com status `aguardando_pagamento`. Não há
-cobrança automática ainda.
+O checkout já está com a cobrança automática pronta no código. O que falta é
+só configuração do lado da InfinitePay e do Supabase — nenhum arquivo
+precisa mudar depois disso. Como funciona: o cliente confirma o pedido, o
+site gera um link de pagamento da InfinitePay (Pix, crédito em até 12x ou
+débito, conforme o que sua conta InfinitePay tiver habilitado) e redireciona
+o cliente pra lá. Quando ele paga, a InfinitePay chama um webhook que marca
+o pedido como `pago` automaticamente no banco.
 
-Por que InfinitePay: Pix gratuito pra sempre, cartão em até 12x, integração
-é uma simples chamada POST (sem SDK obrigatório) que devolve um link de
-pagamento pronto, e webhook avisa quando o cliente pagou.
+### 1. Habilitar o Checkout Integrado na InfinitePay
 
-Quando quiserem ativar o pagamento de verdade:
+1. Abra o app InfinitePay (ou [acesse pela web](https://app.infinitepay.io/external-checkout)).
+2. Vá em **Vendas > Checkout > Configurações**.
+3. Toque em **Habilitar Checkout Integrado**.
+4. Anote sua **InfiniteTag** (o `@handle` que aparece no topo do app/site,
+   sem o `$` do início) — é só isso que a integração precisa, não tem chave
+   secreta de API para essa parte.
 
-1. Crie uma conta grátis na InfinitePay em https://www.infinitepay.io/checkout
-   e peça a credencial/handle de integração (Checkout Integrado).
-2. Implemente e publique a Edge Function `supabase/edge-functions/create-infinitepay-link`
-   (o arquivo já está com o esqueleto comentado, incluindo os passos e o
-   trecho de código que chama a API de links de pagamento da InfinitePay).
-3. No `js/checkout.js`, no lugar do comentário `// TODO (próximo passo)`,
-   chame essa função passando o `orderId` e redirecione o cliente para a
-   URL de pagamento (`url`) que ela devolver.
-4. Crie também uma função de webhook (`infinitepay-webhook`) para a
-   InfinitePay avisar quando o pagamento for aprovado, e nela atualizar
-   `orders.status` para `pago` (usando o `order_nsu` para casar com o pedido).
+### 2. Publicar as duas Edge Functions no Supabase
 
-Isso é intencionalmente deixado como próximo passo, já que ainda não há
-conta InfinitePay criada — a estrutura de banco e checkout já está pronta
-para receber essa integração sem precisar redesenhar nada. Documentação
-oficial: https://www.infinitepay.io/checkout-documentacao
+Direto pelo painel, sem precisar instalar nada:
+
+1. No Supabase, vá em **Edge Functions > Create a new function**.
+2. Nome: `create-infinitepay-link`. Cole o conteúdo de
+   `supabase/edge-functions/create-infinitepay-link/index.ts` e clique em
+   **Deploy**.
+3. Nas configurações dessa função (aba de **Secrets**/variáveis), defina:
+   - `INFINITEPAY_HANDLE` — sua InfiniteTag, sem `$` (ex.: `reisenlab3d`)
+   - `SUPABASE_URL` — a URL do seu projeto (Settings > API)
+   - `SUPABASE_SERVICE_ROLE_KEY` — a chave **service_role** (Settings > API —
+     essa é diferente da anon key; fica só aqui, nunca no `js/config.js`)
+   - `SITE_URL` — `https://SEU-USUARIO.github.io/reisen-lab-3d`
+4. Crie outra função, nome: `infinitepay-webhook`. Cole o conteúdo de
+   `supabase/edge-functions/infinitepay-webhook/index.ts` e clique em
+   **Deploy**. Ela pode usar as mesmas secrets `SUPABASE_URL` e
+   `SUPABASE_SERVICE_ROLE_KEY` do passo anterior.
+
+### 3. Pronto
+
+Não precisa editar `js/checkout.js` nem `js/config.js` — já está tudo
+plugado: ao confirmar o pedido, o site chama `create-infinitepay-link`,
+redireciona para a tela de pagamento da InfinitePay e, após o pagamento, o
+`infinitepay-webhook` atualiza o pedido para `pago` automaticamente (isso
+aparece tanto na tela de confirmação do cliente quanto no painel `admin.html`).
+
+Se o pedido ficar parado em `aguardando_pagamento` por muito tempo, o
+cliente pode ter fechado a tela de pagamento antes de concluir — nesse caso,
+combine manualmente pelo WhatsApp ou peça pra ele tentar de novo pelo
+checkout.
+
+Documentação oficial: https://ajuda.infinitepay.io/pt-BR/articles/10766888
 
 ## Sobre a logo
 
@@ -166,4 +190,6 @@ novo com o mesmo nome — não precisa mexer no HTML/CSS.
 - [ ] Trocar `assets/logo.svg` pela arte final da marca
 - [ ] Testar cadastro, login, carrinho e checkout com o Supabase já configurado
 - [ ] Publicar no GitHub Pages e testar o link público
-- [ ] Quando tiver a conta InfinitePay criada, implementar a Edge Function de pagamento
+- [ ] Habilitar o Checkout Integrado no app InfinitePay e pegar sua InfiniteTag
+- [ ] Publicar as Edge Functions `create-infinitepay-link` e `infinitepay-webhook` no Supabase (ver seção de pagamento)
+- [ ] Fazer um pedido de teste de ponta a ponta (pagar de verdade com valor baixo) para confirmar que o status vira "pago" sozinho
