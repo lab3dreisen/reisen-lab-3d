@@ -276,6 +276,10 @@ function reisenMapDbProduct(row) {
     stock: row.stock,
     short: row.description,
     description: row.description,
+    weightKg: row.weight_kg !== null && row.weight_kg !== undefined ? Number(row.weight_kg) : 0.3,
+    lengthCm: row.length_cm !== null && row.length_cm !== undefined ? Number(row.length_cm) : 16,
+    widthCm: row.width_cm !== null && row.width_cm !== undefined ? Number(row.width_cm) : 11,
+    heightCm: row.height_cm !== null && row.height_cm !== undefined ? Number(row.height_cm) : 11,
   };
 }
 
