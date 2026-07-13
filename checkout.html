@@ -90,8 +90,8 @@
             <label class="pay-method selected">
               <input type="radio" name="payment" value="infinitepay" checked>
               <div>
-                <div class="tit">InfinitePay <span class="soon">Em breve</span></div>
-                <p class="desc">Pix (sem taxa) ou cartão de crédito em até 12x via InfinitePay. A cobrança automática será ativada em breve — por enquanto seu pedido fica registrado como "aguardando pagamento" e entraremos em contato para combinar o pagamento.</p>
+                <div class="tit">InfinitePay</div>
+                <p class="desc">Pix, cartão de crédito (em até 12x) ou débito via InfinitePay. Ao confirmar, você será redirecionado para uma página segura da InfinitePay para concluir o pagamento.</p>
               </div>
             </label>
           </div>
@@ -223,7 +223,23 @@
     }
 
     reisenClearCart();
-    window.location.href = 'pedido-confirmado.html?id=' + encodeURIComponent(orderId);
+
+    if (window.REISEN_DEMO_MODE) {
+      window.location.href = 'pedido-confirmado.html?id=' + encodeURIComponent(orderId);
+      return;
+    }
+
+    try {
+      submitBtn.innerHTML = '<span class="spinner"></span> Abrindo pagamento...';
+      const payUrl = await reisenCreateInfinitePayLink(orderId);
+      window.location.href = payUrl;
+    } catch (linkError) {
+      // O pedido já foi salvo; só não conseguimos gerar o link agora.
+      // Manda para a confirmação mesmo assim — o pedido fica "aguardando
+      // pagamento" e dá para combinar manualmente ou reabrir o link depois.
+      console.error('Erro ao gerar link InfinitePay:', linkError);
+      window.location.href = 'pedido-confirmado.html?id=' + encodeURIComponent(orderId);
+    }
   });
 </script>
 </body>
