@@ -79,6 +79,16 @@
               <div class="field"><label>Estoque</label><input type="number" min="0" name="stock" required></div>
               <div class="field"><label>Selo (opcional: Novo, Promoção...)</label><input type="text" name="badge"></div>
             </div>
+            <h3 style="margin-top:8px;">Peso e dimensões (para cálculo de frete)</h3>
+            <p class="form-note" style="margin-top:-8px;">Medidas da embalagem já pronta para envio. Se não souber exatamente, deixe os valores padrão — eles servem para uma caixa pequena.</p>
+            <div class="field-row">
+              <div class="field"><label>Peso (kg)</label><input type="number" step="0.01" min="0.01" name="weight_kg" required></div>
+              <div class="field"><label>Comprimento (cm)</label><input type="number" step="0.1" min="1" name="length_cm" required></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Largura (cm)</label><input type="number" step="0.1" min="1" name="width_cm" required></div>
+              <div class="field"><label>Altura (cm)</label><input type="number" step="0.1" min="1" name="height_cm" required></div>
+            </div>
             <div class="field">
               <label>Foto do produto</label>
               <div class="image-drop-zone" id="imageDropZone">
