@@ -156,6 +156,7 @@ async function reisenSubmitOrder(formData) {
     customer_name: formData.name,
     customer_email: formData.email,
     customer_phone: formData.phone,
+    customer_document: (formData.document || "").replace(/\D/g, ""),
     shipping_address: {
       cep: formData.cep,
       street: formData.street,
@@ -172,6 +173,7 @@ async function reisenSubmitOrder(formData) {
     shipping_carrier: shipping ? shipping.carrier : null,
     shipping_service: shipping ? shipping.service : null,
     shipping_days: shipping ? shipping.days : null,
+    shipping_service_id: shipping ? shipping.id : null,
   };
 
   if (window.REISEN_DEMO_MODE) {
