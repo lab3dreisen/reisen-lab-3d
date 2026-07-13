@@ -82,8 +82,21 @@ async function reisenFetchShippingOptions(cep) {
 }
 
 /**
+ * Verifica se um CEP (só dígitos) está na faixa do Distrito Federal, para
+ * oferecer a opção gratuita de retirada no local.
+ * Faixas oficiais do DF: 70000-000 a 72799-999 e 73000-000 a 73699-999.
+ */
+function reisenIsDFCep(cep) {
+  const n = parseInt(cep, 10);
+  if (!n) return false;
+  return (n >= 70000000 && n <= 72799999) || (n >= 73000000 && n <= 73699999);
+}
+
+/**
  * Dispara a cotação de frete para o CEP atual do formulário, mostra estado de
- * carregamento/erro e renderiza as opções assim que chegarem.
+ * carregamento/erro e renderiza as opções assim que chegarem. Para CEPs do
+ * DF, sempre inclui a opção gratuita de retirada no local, mesmo que a
+ * cotação paga (Melhor Envio) falhe ou esteja em modo demonstração.
  */
 async function reisenHandleShippingLookup() {
   const cepInput = document.querySelector('#checkoutForm [name="cep"]');
@@ -103,18 +116,35 @@ async function reisenHandleShippingLookup() {
   box.classList.remove("hidden");
   box.innerHTML = '<p class="form-note">Calculando opções de frete…</p>';
 
+  const pickupOptions = reisenIsDFCep(cep)
+    ? [{ id: null, carrier: "Retirada no local", service: "Grátis — combine o horário pelo WhatsApp", price: 0, days: 0 }]
+    : [];
+
+  let paidOptions = [];
+  let paidError = null;
+
   if (window.REISEN_DEMO_MODE) {
-    box.innerHTML = '<p class="form-note">Cálculo de frete disponível quando o Supabase estiver configurado (modo demonstração).</p>';
+    paidError = "Cálculo de frete pago disponível quando o Supabase estiver configurado (modo demonstração).";
+  } else {
+    try {
+      paidOptions = await reisenFetchShippingOptions(cep);
+    } catch (err) {
+      paidError = err.message;
+    }
+  }
+
+  const options = [...pickupOptions, ...paidOptions];
+
+  if (options.length === 0) {
+    box.innerHTML = `<p class="form-note" style="color:var(--danger);">${paidError || "Nenhuma opção de frete disponível para esse CEP."}</p>`;
     return;
   }
 
-  try {
-    const options = await reisenFetchShippingOptions(cep);
-    box.innerHTML =
-      '<div class="pay-methods">' +
-      options
-        .map(
-          (opt, idx) => `
+  box.innerHTML =
+    '<div class="pay-methods">' +
+    options
+      .map(
+        (opt, idx) => `
       <label class="pay-method${idx === 0 ? " selected" : ""}">
         <input type="radio" name="shippingOption" value="${idx}" ${idx === 0 ? "checked" : ""} onchange="reisenSelectShippingOption(${idx})">
         <div>
@@ -122,14 +152,13 @@ async function reisenHandleShippingLookup() {
           <p class="desc">${reisenFormatBRL(opt.price)}${opt.days ? ` · até ${opt.days} dias úteis` : ""}</p>
         </div>
       </label>`
-        )
-        .join("") +
-      "</div>";
-    window._reisenShippingOptions = options;
-    reisenSelectShippingOption(0);
-  } catch (err) {
-    box.innerHTML = `<p class="form-note" style="color:var(--danger);">${err.message}</p>`;
-  }
+      )
+      .join("") +
+    "</div>" +
+    (paidError && pickupOptions.length ? `<p class="form-note" style="margin-top:8px;">${paidError}</p>` : "");
+
+  window._reisenShippingOptions = options;
+  reisenSelectShippingOption(0);
 }
 
 function reisenSelectShippingOption(idx) {
