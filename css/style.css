@@ -595,16 +595,23 @@ section{ padding: 64px 0; }
 .empty-state .ico{ font-size:3rem; margin-bottom:14px; }
 
 /* Produto detalhe */
-.product-detail{ display:grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+/* minmax(0,1fr) em vez de 1fr puro: evita que uma foto de produto com
+   resolução grande "estoure" a coluna e empurre o texto pra fora da tela
+   (bug clássico do CSS Grid com imagens). */
+.product-detail{ display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 40px; }
+.product-detail > div{ min-width:0; } /* também protege a coluna de texto de "esticar" com palavras longas */
 @media (max-width: 860px){ .product-detail{ grid-template-columns: 1fr; } }
 /* Preserva as quebras de linha digitadas na descrição do produto no admin
    (senão o navegador junta tudo numa linha só). */
 .product-description{ white-space: pre-line; line-height:1.6; }
 .product-gallery{
   position:relative;
+  min-width:0;
+  max-width:100%;
   aspect-ratio: 1/1;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
+  overflow:hidden;
   display:flex; align-items:center; justify-content:center;
   font-size: 7rem;
   background:
