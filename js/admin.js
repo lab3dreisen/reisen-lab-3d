@@ -99,7 +99,7 @@ async function reisenLoadAdminProducts() {
         p.image_url
           ? `<img src="${p.image_url}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:6px;">`
           : (p.emoji || "📦") + " "
-      }${p.name}</td>
+      }${p.name}${p.featured ? ' <span title="Aparece na página inicial">⭐</span>' : ""}</td>
       <td style="padding:10px 8px;">${(window.REISEN_CATEGORIES.find((c) => c.slug === p.category) || {}).name || p.category}</td>
       <td style="padding:10px 8px;">${reisenFormatBRL(Number(p.price))}${
         p.old_price ? `<br><span class="price-old">${reisenFormatBRL(Number(p.old_price))}</span>` : ""
@@ -141,6 +141,7 @@ function reisenOpenProductForm(product) {
   f.height_cm.value = product && product.height_cm ? product.height_cm : 11;
   f.description.value = product && product.description ? product.description : "";
   f.active.checked = product ? !!product.active : true;
+  f.featured.checked = product ? !!product.featured : false;
 
   document.getElementById("productImageInput").value = "";
   const preview = document.getElementById("imagePreview");
@@ -293,6 +294,7 @@ async function reisenSubmitProductForm(e) {
       height_cm: parseFloat(f.height_cm.value) || 11,
       description: f.description.value.trim(),
       active: f.active.checked,
+      featured: f.featured.checked,
     };
 
     submitBtn.textContent = "Salvando…";
