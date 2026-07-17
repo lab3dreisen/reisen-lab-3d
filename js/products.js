@@ -26,6 +26,7 @@ window.REISEN_PRODUCTS = [
     badge: "Mais vendido",
     stock: 18,
     featured: true,
+    onSlide: true,
     short: "Miniatura em resina para RPG de mesa, alta definição de escamas e detalhes.",
     description:
       "Impressa em resina de alta resolução, ideal para mesas de RPG e colecionadores. Acabamento com suporte para pintura, base texturizada incluída. Escala 32mm (outras escalas sob consulta).",
@@ -126,6 +127,7 @@ window.REISEN_PRODUCTS = [
     badge: "Novo",
     stock: 15,
     featured: true,
+    onSlide: true,
     short: "Luminária decorativa com padrão orgânico Voronoi e iluminação LED embutida.",
     description:
       "Peça decorativa impressa em 3D com padrão Voronoi, acompanha fita LED USB. Um destaque futurista para qualquer ambiente.",
@@ -285,6 +287,7 @@ function reisenMapDbProduct(row) {
     widthCm: row.width_cm !== null && row.width_cm !== undefined ? Number(row.width_cm) : 11,
     heightCm: row.height_cm !== null && row.height_cm !== undefined ? Number(row.height_cm) : 11,
     featured: !!row.featured,
+    onSlide: !!row.on_slide,
   };
 }
 
@@ -328,6 +331,33 @@ function reisenGetFeaturedProducts(limit) {
   const all = window.REISEN_PRODUCTS || [];
   const featured = all.filter((p) => p.featured);
   return (featured.length > 0 ? featured : all).slice(0, limit);
+}
+
+/**
+ * Produtos marcados no admin para aparecer no slide/carrossel do banner
+ * principal da home ("Adicionar ao slide"). Diferente de reisenGetFeaturedProducts:
+ * aqui, se nenhum produto estiver marcado, devolve uma lista vazia — nesse
+ * caso a home mantém a imagem estática padrão do banner (sem carrossel).
+ */
+function reisenGetSlideProducts(limit) {
+  limit = limit || 8;
+  const all = window.REISEN_PRODUCTS || [];
+  return all.filter((p) => p.onSlide).slice(0, limit);
+}
+
+/**
+ * Card usado dentro de um slide do banner principal da home: a foto inteira
+ * é um link direto para a página do produto.
+ */
+function reisenHeroSlideHTML(p, idx) {
+  const media = p.image
+    ? `<img src="${p.image}" alt="${p.name}">`
+    : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:4.5rem;background:#0d1220;">${p.emoji || "📦"}</div>`;
+  return `
+  <a href="produto.html?id=${p.id}" class="rp-hero-slide${idx === 0 ? " active" : ""}">
+    ${media}
+    <div class="rp-hero-media-caption"><span class="dot"></span> ${p.name}</div>
+  </a>`;
 }
 
 /**
