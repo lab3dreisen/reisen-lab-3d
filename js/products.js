@@ -25,6 +25,7 @@ window.REISEN_PRODUCTS = [
     emoji: "🐉",
     badge: "Mais vendido",
     stock: 18,
+    featured: true,
     short: "Miniatura em resina para RPG de mesa, alta definição de escamas e detalhes.",
     description:
       "Impressa em resina de alta resolução, ideal para mesas de RPG e colecionadores. Acabamento com suporte para pintura, base texturizada incluída. Escala 32mm (outras escalas sob consulta).",
@@ -67,6 +68,7 @@ window.REISEN_PRODUCTS = [
     emoji: "🧩",
     badge: "Sob orçamento",
     stock: 999,
+    featured: true,
     short: "Modelagem e impressão de protótipos funcionais a partir do seu projeto ou ideia.",
     description:
       "Serviço completo de modelagem 3D e impressão de protótipos funcionais para projetos pessoais, startups e empresas. Valor inicial — orçamento final conforme complexidade e material.",
@@ -123,6 +125,7 @@ window.REISEN_PRODUCTS = [
     emoji: "💡",
     badge: "Novo",
     stock: 15,
+    featured: true,
     short: "Luminária decorativa com padrão orgânico Voronoi e iluminação LED embutida.",
     description:
       "Peça decorativa impressa em 3D com padrão Voronoi, acompanha fita LED USB. Um destaque futurista para qualquer ambiente.",
@@ -182,6 +185,7 @@ window.REISEN_PRODUCTS = [
     image: "assets/produtos/chaveiros/chaveiromonster.jpg",
     badge: "Novo",
     stock: 40,
+    featured: true,
     short: "Chaveiro com o logo Monster Energy, em preto e amarelo.",
     description:
       "Impresso em multicor (preto e amarelo) com acabamento fosco, argola e correntinha douradas. Ótimo mimo para fãs da marca.",
@@ -280,7 +284,50 @@ function reisenMapDbProduct(row) {
     lengthCm: row.length_cm !== null && row.length_cm !== undefined ? Number(row.length_cm) : 16,
     widthCm: row.width_cm !== null && row.width_cm !== undefined ? Number(row.width_cm) : 11,
     heightCm: row.height_cm !== null && row.height_cm !== undefined ? Number(row.height_cm) : 11,
+    featured: !!row.featured,
   };
+}
+
+/**
+ * Card de produto no estilo da página inicial (design "premium", classes
+ * rp-*). Usado pela seção "Produtos em destaque" do index.html — diferente
+ * de reisenProductCardHTML, que é o card usado em loja.html.
+ */
+function reisenFeaturedProductCardHTML(p, idx) {
+  const badge = p.badge ? `<span class="badge">${p.badge}</span>` : "";
+  const tileClass = !p.image ? ` tile-${(idx % 6) + 1}` : "";
+  const media = p.image
+    ? `<img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
+    : `${p.emoji || "📦"}`;
+  const oldPrice = p.oldPrice ? `<span class="rp-price-old">${reisenFormatBRL(p.oldPrice)}</span>` : "";
+  const priceNow =
+    p.category === "servicos"
+      ? `a partir de ${reisenFormatBRL(p.price)}`
+      : reisenFormatBRL(p.price);
+  return `
+  <div class="rp-product-card">
+    <a href="produto.html?id=${p.id}" class="rp-product-thumb${tileClass}">${badge}${media}</a>
+    <div class="rp-product-body">
+      <h3 class="rp-product-name"><a href="produto.html?id=${p.id}">${p.name}</a></h3>
+      <div class="rp-price-row">${oldPrice}<span class="rp-price-now">${priceNow}</span></div>
+      <button class="rp-buy-btn" onclick="reisenAddToCart('${p.id}',1); reisenToast('Adicionado ao carrinho');">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Comprar
+      </button>
+    </div>
+  </div>`;
+}
+
+/**
+ * Escolhe quais produtos mostrar em "Produtos em destaque" na home: os
+ * marcados como destaque (featured=true) no admin; se nenhum estiver
+ * marcado, cai para os mais recentes, só para a seção nunca ficar vazia.
+ */
+function reisenGetFeaturedProducts(limit) {
+  limit = limit || 4;
+  const all = window.REISEN_PRODUCTS || [];
+  const featured = all.filter((p) => p.featured);
+  return (featured.length > 0 ? featured : all).slice(0, limit);
 }
 
 /**
