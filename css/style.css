@@ -608,71 +608,23 @@ section{ padding: 64px 0; }
     radial-gradient(circle at 30% 20%, rgba(30,160,255,.16), transparent 55%),
     linear-gradient(160deg, #eef1f6, #e4e9f1);
 }
-.rp-zoom-hint{
-  position:absolute; right:16px; bottom:16px;
-  display:flex; align-items:center; gap:6px;
-  padding: 8px 14px;
-  border-radius:999px;
-  background: rgba(16,19,26,.72);
-  color:#fff;
-  font-size:.78rem; font-weight:600;
-  pointer-events:none;
-}
-.rp-zoom-hint svg{ width:15px; height:15px; flex-shrink:0; }
-
-/* Modal de zoom com lupa */
-.rp-zoom-modal{
-  display:none;
-  position:fixed; inset:0; z-index:1000;
-  background: rgba(8,10,16,.92);
-  align-items:center; justify-content:center;
-  flex-direction:column; gap:16px;
-  padding: 40px 20px;
-}
-.rp-zoom-modal.open{ display:flex; }
-.rp-zoom-close{
-  position:absolute; top:20px; right:20px;
-  width:42px; height:42px; border-radius:50%;
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.25);
-  color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer;
-}
-.rp-zoom-close:hover{ background: rgba(255,255,255,.2); }
-.rp-zoom-close svg{ width:20px; height:20px; }
-.rp-zoom-stage{
-  position:relative;
-  max-width: min(720px, 90vw);
-  max-height: 74vh;
-  cursor: crosshair;
-}
-.rp-zoom-stage img{
-  display:block;
-  max-width: min(720px, 90vw);
-  max-height: 74vh;
-  width:auto; height:auto;
-  border-radius: var(--radius);
-  box-shadow: 0 20px 60px rgba(0,0,0,.5);
-}
-.rp-zoom-lens{
+/* Lupa: ao passar o mouse sobre a foto do produto, mostra um pequeno círculo
+   ampliado seguindo o cursor, sem precisar clicar em nada. */
+.rp-inline-lens{
   position:absolute;
-  width:160px; height:160px;
+  width:130px; height:130px;
   border-radius:50%;
   border: 3px solid #fff;
-  box-shadow: 0 0 0 2000px rgba(0,0,0,.35), 0 6px 20px rgba(0,0,0,.4);
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
   pointer-events:none;
   opacity:0;
   background-repeat:no-repeat;
-  transition: opacity .15s ease;
+  background-color:#fff;
+  transition: opacity .12s ease;
+  z-index:2;
 }
-.rp-zoom-tip{
-  color: rgba(255,255,255,.6);
-  font-size:.8rem;
-}
-@media (max-width: 640px){
-  .rp-zoom-lens{ display:none; }
-  .rp-zoom-tip{ display:none; }
+@media (max-width: 860px){
+  .rp-inline-lens{ display:none; } /* sem mouse no celular, a lupa não faz sentido */
 }
 .breadcrumb{ font-size:.82rem; color: var(--text-mute); margin-bottom: 20px; }
 .breadcrumb a:hover{ color: var(--cyan); }
