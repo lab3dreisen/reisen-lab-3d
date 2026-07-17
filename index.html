@@ -78,9 +78,20 @@
           </div>
         </div>
       </div>
-      <div class="rp-hero-media rp-reveal in">
-        <img src="assets/CAPA.png" alt="Impressora 3D imprimindo uma escultura de dragão em alta resolução">
-        <div class="rp-hero-media-caption"><span class="dot"></span> Laboratório REISEN LAB 3D</div>
+      <div class="rp-hero-media rp-reveal in" id="heroSlider">
+        <div class="rp-hero-slides" id="heroSlides">
+          <a href="loja.html" class="rp-hero-slide active">
+            <img src="assets/CAPA.png" alt="Impressora 3D imprimindo uma escultura de dragão em alta resolução">
+            <div class="rp-hero-media-caption"><span class="dot"></span> Laboratório REISEN LAB 3D</div>
+          </a>
+        </div>
+        <button type="button" class="rp-hero-arrow prev hidden" onclick="reisenHeroSlidePrev()" aria-label="Slide anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button type="button" class="rp-hero-arrow next hidden" onclick="reisenHeroSlideNext()" aria-label="Próximo slide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+        <div class="rp-hero-dots" id="heroDots"></div>
       </div>
     </div>
   </section>
@@ -328,6 +339,65 @@
 <script src="js/auth.js"></script>
 <script src="js/main.js"></script>
 <script>
+  // --- Slide/carrossel do banner principal (home) --------------------------
+  let reisenHeroIndex = 0;
+  let reisenHeroSlideCount = 1;
+  let reisenHeroAutoTimer = null;
+
+  function reisenRenderHeroSlider(products) {
+    const wrap = document.getElementById('heroSlides');
+    const dotsWrap = document.getElementById('heroDots');
+    const arrows = document.querySelectorAll('#heroSlider .rp-hero-arrow');
+    if (!wrap) return;
+
+    // Nenhum produto marcado para o slide: mantém a imagem estática padrão
+    // que já está no HTML, sem setas nem bolinhas.
+    if (!products || !products.length) {
+      arrows.forEach((a) => a.classList.add('hidden'));
+      if (dotsWrap) dotsWrap.innerHTML = '';
+      return;
+    }
+
+    wrap.innerHTML = products.map((p, idx) => reisenHeroSlideHTML(p, idx)).join('');
+    reisenHeroIndex = 0;
+    reisenHeroSlideCount = products.length;
+
+    if (dotsWrap) {
+      dotsWrap.innerHTML = products
+        .map((_, idx) => `<button type="button" class="rp-hero-dot${idx === 0 ? ' active' : ''}" onclick="reisenHeroSlideGoTo(${idx})" aria-label="Ir para o slide ${idx + 1}"></button>`)
+        .join('');
+    }
+
+    if (products.length > 1) {
+      arrows.forEach((a) => a.classList.remove('hidden'));
+      reisenStartHeroAutoplay();
+    } else {
+      arrows.forEach((a) => a.classList.add('hidden'));
+    }
+  }
+
+  function reisenHeroSlideGoTo(idx) {
+    reisenHeroIndex = ((idx % reisenHeroSlideCount) + reisenHeroSlideCount) % reisenHeroSlideCount;
+    document.querySelectorAll('#heroSlides .rp-hero-slide').forEach((s, i) => s.classList.toggle('active', i === reisenHeroIndex));
+    document.querySelectorAll('#heroDots .rp-hero-dot').forEach((d, i) => d.classList.toggle('active', i === reisenHeroIndex));
+  }
+
+  function reisenHeroSlideNext() {
+    reisenHeroSlideGoTo(reisenHeroIndex + 1);
+    reisenStartHeroAutoplay();
+  }
+
+  function reisenHeroSlidePrev() {
+    reisenHeroSlideGoTo(reisenHeroIndex - 1);
+    reisenStartHeroAutoplay();
+  }
+
+  function reisenStartHeroAutoplay() {
+    clearInterval(reisenHeroAutoTimer);
+    if (reisenHeroSlideCount <= 1) return;
+    reisenHeroAutoTimer = setInterval(() => reisenHeroSlideGoTo(reisenHeroIndex + 1), 6000);
+  }
+
   (async function initHome() {
     // Carrega o catálogo real (Supabase) e renderiza os produtos marcados
     // como "destaque" no admin.html. Se nenhum estiver marcado, mostra os
@@ -340,6 +410,10 @@
         ? featured.map((p, idx) => reisenFeaturedProductCardHTML(p, idx)).join('')
         : '<p class="form-note">Nenhum produto cadastrado ainda.</p>';
     }
+
+    // Slide do banner principal: só troca a imagem estática padrão se algum
+    // produto estiver marcado como "Adicionar ao slide" no admin.
+    reisenRenderHeroSlider(reisenGetSlideProducts(8));
 
     // Animação discreta de entrada ao rolar a página (roda depois de
     // renderizar os destaques, para os cards novos também entrarem na animação)
