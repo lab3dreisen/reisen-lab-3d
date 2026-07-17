@@ -597,6 +597,9 @@ section{ padding: 64px 0; }
 /* Produto detalhe */
 .product-detail{ display:grid; grid-template-columns: 1fr 1fr; gap: 40px; }
 @media (max-width: 860px){ .product-detail{ grid-template-columns: 1fr; } }
+/* Preserva as quebras de linha digitadas na descrição do produto no admin
+   (senão o navegador junta tudo numa linha só). */
+.product-description{ white-space: pre-line; line-height:1.6; }
 .product-gallery{
   position:relative;
   aspect-ratio: 1/1;
