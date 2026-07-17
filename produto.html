@@ -119,6 +119,17 @@
   </div>
 </footer>
 
+<div class="rp-zoom-modal" id="rpZoomModal" onclick="if(event.target===this) reisenCloseImageZoom();">
+  <button type="button" class="rp-zoom-close" onclick="reisenCloseImageZoom()" aria-label="Fechar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="rp-zoom-stage" id="rpZoomStage">
+    <img id="rpZoomImg" src="" alt="">
+    <div class="rp-zoom-lens" id="rpZoomLens"></div>
+  </div>
+  <p class="rp-zoom-tip">Passe o mouse sobre a imagem para dar zoom</p>
+</div>
+
 <div class="buy-bar-mobile" id="buyBarMobile" style="display:none;">
   <div>
     <span class="old" id="buyBarOld"></span>
@@ -175,7 +186,12 @@
 
     root.innerHTML = `
       <div class="product-detail">
-        <div class="product-gallery">${product.image ? `<img src="${product.image}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">` : `<span>${product.emoji}</span>`}</div>
+        <div class="product-gallery"${product.image ? ` onclick="reisenOpenImageZoom('${product.image}', '${product.name.replace(/'/g, "\\'")}')" style="cursor:zoom-in;"` : ""}>
+          ${product.image
+            ? `<img src="${product.image}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+               <div class="rp-zoom-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg> Ver com zoom</div>`
+            : `<span>${product.emoji}</span>`}
+        </div>
         <div>
           ${badgeHtml}
           <h1>${product.name}</h1>
@@ -210,6 +226,61 @@
     if (product.oldPrice) document.getElementById('buyBarOld').textContent = reisenFormatBRL(product.oldPrice);
     document.getElementById('buyBarMobile').style.display = 'flex';
   }
+  })();
+
+  // --- Zoom com lupa na foto do produto ------------------------------------
+  const ZOOM_FACTOR = 2.5; // quanto a lupa amplia em relação ao tamanho exibido
+  const LENS_SIZE = 160; // px, diâmetro do círculo da lupa
+
+  function reisenOpenImageZoom(src, alt) {
+    const modal = document.getElementById('rpZoomModal');
+    const img = document.getElementById('rpZoomImg');
+    img.src = src;
+    img.alt = alt || '';
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function reisenCloseImageZoom() {
+    document.getElementById('rpZoomModal').classList.remove('open');
+    document.getElementById('rpZoomLens').style.opacity = '0';
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') reisenCloseImageZoom();
+  });
+
+  (function initZoomLens() {
+    const stage = document.getElementById('rpZoomStage');
+    const img = document.getElementById('rpZoomImg');
+    const lens = document.getElementById('rpZoomLens');
+    if (!stage || !img || !lens) return;
+
+    function moveLens(clientX, clientY) {
+      const rect = img.getBoundingClientRect();
+      let x = clientX - rect.left;
+      let y = clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        lens.style.opacity = '0';
+        return;
+      }
+      lens.style.opacity = '1';
+      lens.style.left = `${x - LENS_SIZE / 2}px`;
+      lens.style.top = `${y - LENS_SIZE / 2}px`;
+      lens.style.backgroundImage = `url('${img.src}')`;
+      lens.style.backgroundSize = `${rect.width * ZOOM_FACTOR}px ${rect.height * ZOOM_FACTOR}px`;
+      lens.style.backgroundPosition = `-${x * ZOOM_FACTOR - LENS_SIZE / 2}px -${y * ZOOM_FACTOR - LENS_SIZE / 2}px`;
+    }
+
+    stage.addEventListener('mousemove', (e) => moveLens(e.clientX, e.clientY));
+    stage.addEventListener('mouseleave', () => { lens.style.opacity = '0'; });
+
+    // No touch (celular), um toque simples só mostra a lupa centralizada no ponto tocado.
+    stage.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) moveLens(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    stage.addEventListener('touchend', () => { lens.style.opacity = '0'; });
   })();
 
   function changeQty(delta) {
